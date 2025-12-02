@@ -1,0 +1,247 @@
+"""
+FREE Debug Agent - No MCP Server Required
+Direct API integration with Jira and GitHub
+"""
+import os
+import json
+from typing import Dict, List
+from dotenv import load_dotenv
+from anthropic import Anthropic
+from rich.console import Console
+from rich.panel import Panel
+from rich.markdown import Markdown
+
+from jira_client import SimpleJiraClient
+from github_client import SimpleGitHubClient
+
+load_dotenv()
+console = Console()
+
+class FreeDebugAgent:
+    """
+    FREE Debug Agent for POC
+    - Uses direct API calls (no MCP server needed)
+    - Works with free Jira, GitHub, and Anthropic accounts
+    """
+    
+    def __init__(self):
+        console.print("[bold cyan]🚀 Initializing FREE Debug Agent...[/bold cyan]")
+        
+        try:
+            # API clients
+            self.jira = SimpleJiraClient()
+            self.github = SimpleGitHubClient()
+            self.anthropic = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+            
+            # Configuration
+            self.model = os.getenv("MODEL", "claude-3-5-sonnet-20241022")
+            self.max_tokens = int(os.getenv("MAX_TOKENS", "4096"))
+            
+            # Conversation history
+            self.conversation_history = []
+            
+            console.print("[bold green]✅ Agent ready![/bold green]")
+            self._show_info()
+        except ValueError as e:
+            console.print(f"[bold red]❌ Configuration Error:[/bold red]\n{str(e)}")
+            raise
+        except Exception as e:
+            console.print(f"[bold red]❌ Initialization Error:[/bold red]\n{str(e)}")
+            raise
+    
+    def _show_info(self):
+        """Show configuration info"""
+        console.print(f"\n[cyan]Jira:[/cyan] {self.jira.url}")
+        console.print(f"[cyan]GitHub:[/cyan] {self.github.owner}/{self.github.repo_name}")
+        console.print(f"[cyan]Model:[/cyan] {self.model}\n")
+    
+    def _create_context(self, issue_data: dict = None, 
+                       code_files: dict = None,
+                       github_info: dict = None) -> str:
+        """Create context for Claude"""
+        context_parts = []
+        
+        if issue_data:
+            fields = issue_data.get('fields', {})
+            context_parts.append(f"""
+**Jira Issue: {issue_data.get('key')}**
+
+**Summary:** {fields.get('summary')}
+
+**Description:**
+{fields.get('description', 'No description')}
+
+**Status:** {fields.get('status', {}).get('name')}
+**Priority:** {fields.get('priority', {}).get('name', 'None')}
+**Type:** {fields.get('issuetype', {}).get('name')}
+""")
+        
+        if code_files:
+            context_parts.append("\n**Code Files:**\n")
+            for filename, content in code_files.items():
+                context_parts.append(f"\n**{filename}:**\n```\n{content}\n```\n")
+        
+        if github_info:
+            if 'commits' in github_info:
+                context_parts.append("\n**Recent Commits:**\n")
+                for commit in github_info['commits']:
+                    context_parts.append(
+                        f"- {commit['sha']}: {commit['message']} "
+                        f"by {commit['author']} ({commit['date']})"
+                    )
+        
+        return "\n".join(context_parts)
+    
+    def chat(self, message: str, context: str = "") -> str:
+        """Chat with Claude"""
+        full_message = f"{context}\n\n{message}" if context else message
+        
+        console.print(Panel(
+            message,
+            title="[bold blue]👤 You[/bold blue]",
+            border_style="blue"
+        ))
+        
+        self.conversation_history.append({
+            "role": "user",
+            "content": full_message
+        })
+        
+        response = self.anthropic.messages.create(
+            model=self.model,
+            max_tokens=self.max_tokens,
+            system="""You are an expert debugging assistant. Analyze bugs thoroughly and provide:
+1. Root cause explanation
+2. Exact code fix
+3. Testing steps
+4. Prevention recommendations
+
+Be clear, concise, and actionable.""",
+            messages=self.conversation_history
+        )
+        
+        assistant_message = response.content[0].text
+        
+        self.conversation_history.append({
+            "role": "assistant",
+            "content": assistant_message
+        })
+        
+        console.print(Panel(
+            Markdown(assistant_message),
+            title="[bold green]🤖 Agent[/bold green]",
+            border_style="green"
+        ))
+        
+        return assistant_message
+    
+    def investigate_bug(self, issue_key: str) -> str:
+        """Investigate a Jira bug"""
+        console.print(f"\n[bold yellow]🔍 Investigating {issue_key}...[/bold yellow]\n")
+        
+        # Get Jira issue
+        issue_data = self.jira.get_issue(issue_key)
+        
+        # Create context
+        context = self._create_context(issue_data=issue_data)
+        
+        # Ask Claude to analyze
+        prompt = f"""Please analyze this bug and provide:
+1. Summary of the issue
+2. Potential root causes
+3. What code files should I look at?
+4. What additional information do you need?"""
+        
+        return self.chat(prompt, context)
+    
+    def analyze_with_code(self, issue_key: str, code_files: Dict[str, str]) -> str:
+        """Analyze bug with code"""
+        console.print(f"\n[bold yellow]🔬 Analyzing {issue_key} with code...[/bold yellow]\n")
+        
+        # Get Jira issue
+        issue_data = self.jira.get_issue(issue_key)
+        
+        # Get recent commits
+        commits = self.github.get_recent_commits(5)
+        
+        # Create context
+        context = self._create_context(
+            issue_data=issue_data,
+            code_files=code_files,
+            github_info={'commits': commits}
+        )
+        
+        prompt = """Please perform a complete bug analysis:
+
+1. **Root Cause:** What's causing the bug?
+2. **The Fix:** Provide exact code changes
+3. **Explanation:** Why does this fix work?
+4. **Testing:** How to verify the fix?
+5. **Prevention:** How to avoid similar bugs?
+
+Be specific and provide code examples."""
+        
+        return self.chat(prompt, context)
+    
+    def document_solution(self, issue_key: str, solution: str) -> str:
+        """Document solution in Jira"""
+        console.print(f"\n[bold yellow]📝 Documenting solution...[/bold yellow]\n")
+        
+        # Add comment to Jira
+        self.jira.add_comment(issue_key, solution)
+        
+        console.print(f"[bold green]✅ Solution documented in {issue_key}[/bold green]")
+        return f"Solution added to {issue_key}"
+    
+    def list_open_bugs(self) -> str:
+        """List open bugs"""
+        console.print(f"\n[bold yellow]📋 Listing open bugs...[/bold yellow]\n")
+        
+        # Get bugs from Jira
+        result = self.jira.get_open_bugs()
+        issues = result.get('issues', [])
+        
+        if not issues:
+            console.print("[yellow]No open bugs found[/yellow]")
+            return "No open bugs"
+        
+        # Format for display
+        bugs_text = f"**Found {len(issues)} open bugs:**\n\n"
+        for issue in issues:
+            fields = issue.get('fields', {})
+            bugs_text += f"- **{issue['key']}**: {fields.get('summary')}\n"
+            bugs_text += f"  Priority: {fields.get('priority', {}).get('name', 'None')}\n"
+            bugs_text += f"  Status: {fields.get('status', {}).get('name')}\n\n"
+        
+        console.print(Markdown(bugs_text))
+        return bugs_text
+    
+    def full_workflow(self, issue_key: str, code_files: Dict[str, str] = None) -> str:
+        """Complete debugging workflow"""
+        console.print(Panel(
+            f"[bold cyan]Starting Full Workflow for {issue_key}[/bold cyan]",
+            border_style="cyan"
+        ))
+        
+        # Step 1: Investigate
+        console.print("\n[bold]Step 1: Investigation[/bold]")
+        self.investigate_bug(issue_key)
+        
+        # Step 2: Analyze with code (if provided)
+        if code_files:
+            console.print("\n[bold]Step 2: Code Analysis[/bold]")
+            analysis = self.analyze_with_code(issue_key, code_files)
+            
+            # Step 3: Document
+            console.print("\n[bold]Step 3: Documentation[/bold]")
+            self.document_solution(issue_key, analysis)
+        
+        console.print("\n[bold green]✅ Workflow complete![/bold green]")
+        return "Workflow completed"
+
+# Quick test
+if __name__ == "__main__":
+    agent = FreeDebugAgent()
+    
+    console.print("\n[bold cyan]Agent ready for testing![/bold cyan]")
+    console.print("\nTry: agent.investigate_bug('KAN-4')\n")

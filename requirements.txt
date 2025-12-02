@@ -1,0 +1,13 @@
+# Core Dependencies
+anthropic>=0.39.0
+python-dotenv>=1.0.0
+rich>=13.7.0
+
+# HTTP Client (for Jira and GitHub APIs)
+requests>=2.31.0
+
+# Optional: Better JSON handling
+pydantic>=2.0.0
+
+# AWS Bedrock (Optional)
+boto3>=1.28.0
