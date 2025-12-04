@@ -3,11 +3,23 @@ anthropic>=0.39.0
 python-dotenv>=1.0.0
 rich>=13.7.0
 
+# LangGraph for agentic workflows
+langgraph>=0.2.0
+langchain>=0.3.0
+langchain-anthropic>=0.2.0
+
 # HTTP Client (for Jira and GitHub APIs)
 requests>=2.31.0
+
+# Browser Automation - CRITICAL for bug reproduction
+playwright>=1.40.0
+selenium>=4.15.0
 
 # Optional: Better JSON handling
 pydantic>=2.0.0
 
 # AWS Bedrock (Optional)
 boto3>=1.28.0
+
+# Additional utilities
+typing-extensions>=4.8.0
