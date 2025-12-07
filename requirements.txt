@@ -7,6 +7,7 @@ rich>=13.7.0
 langgraph>=0.2.0
 langchain>=0.3.0
 langchain-anthropic>=0.2.0
+langchain-aws>=0.1.0
 
 # HTTP Client (for Jira and GitHub APIs)
 requests>=2.31.0
@@ -19,7 +20,7 @@ selenium>=4.15.0
 pydantic>=2.0.0
 
 # AWS Bedrock (Optional)
-boto3>=1.28.0
+boto3>=1.34.0
 
 # Additional utilities
 typing-extensions>=4.8.0

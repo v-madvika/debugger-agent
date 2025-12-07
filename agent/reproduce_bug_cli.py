@@ -1,3 +1,25 @@
+import logging
+import sys
+
+# Configure logging FIRST, before other imports
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s [%(levelname)8s] %(name)s - %(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stdout),  # Explicitly use stdout
+        logging.FileHandler('bug_reproduction.log', mode='w')  # Overwrite log file
+    ],
+    force=True  # Force reconfiguration
+)
+
+# Set all loggers to DEBUG
+logging.getLogger().setLevel(logging.DEBUG)
+
+# Enable logging for specific modules
+logging.getLogger('agent.jira_parser').setLevel(logging.DEBUG)
+logging.getLogger('agent.jira_parser_node').setLevel(logging.DEBUG)
+logging.getLogger('agent.bug_reproduction_agent').setLevel(logging.DEBUG)
+
 """
 CLI for Bug Reproduction Agent
 Enhanced command-line interface with rich formatting
@@ -50,6 +72,7 @@ class BugReproductionCLI:
         verbose: bool = False
     ):
         """Run bug reproduction with rich output"""
+        console.print("Starting reproduction process...1")
         
         # Header
         console.print(Panel(
@@ -74,13 +97,29 @@ class BugReproductionCLI:
                 console=console
             ) as progress:
                 task = progress.add_task("[cyan]Running agent...", total=None)
+
+                print("Starting reproduction process...2")
                 
                 result = self.agent.reproduce_bug(issue_key, code_files)
+
+                print(" reproduction process completed, preparing report...")
                 
                 progress.update(task, completed=True)
+
+                print(" update completed...")
+
             
             # Display results
-            self._display_results(result, verbose)
+            try:
+                print("About to display results...")
+                self._display_results(result, verbose)
+                print("Display results completed successfully...")
+            except Exception as e:
+                console.print(f"\n[bold red]❌ Error displaying results:[/bold red] {str(e)}")
+                logging.error(f"Error in _display_results: {str(e)}", exc_info=True)
+                if verbose:
+                    import traceback
+                    console.print(f"\n[red]{traceback.format_exc()}[/red]")
             
             # Save results
             self._save_results(result, issue_key)
@@ -96,97 +135,120 @@ class BugReproductionCLI:
     
     def _display_results(self, result: Dict, verbose: bool):
         """Display results with rich formatting"""
-        
-        # Status
-        status = result.get("status", "unknown")
-        status_color = "green" if status == "completed" else "red"
-        console.print(f"\n[bold {status_color}]Status: {status.upper()}[/bold {status_color}]")
-        
-        # Messages
-        if verbose:
-            console.print("\n[bold]Execution Log:[/bold]")
-            for msg in result.get("messages", []):
-                console.print(f"  {msg}")
-        
-        # Errors
-        if result.get("errors"):
-            console.print("\n[bold red]Errors:[/bold red]")
-            for error in result["errors"]:
-                console.print(f"  [red]•[/red] {error}")
-        
-        # Reproduction Result
-        repro_result = result.get("reproduction_result")
-        if repro_result:
-            self._display_reproduction_result(repro_result)
+
+        try:
+            print("Displaying results started...")
+            
+            # Status
+            status = result.get("status", "unknown")
+            status_color = "green" if status == "completed" else "red"
+            console.print(f"\n[bold {status_color}]Status: {status.upper()}[/bold {status_color}]")
+            
+            # Messages
+            if verbose:
+                console.print("\n[bold]Execution Log:[/bold]")
+                for msg in result.get("messages", []):
+                    console.print(f"  {msg}")
+            
+            # Errors
+            if result.get("errors"):
+                console.print("\n[bold red]Errors:[/bold red]")
+                for error in result["errors"]:
+                    console.print(f"  [red]•[/red] {error}")
+            
+            # Reproduction Result
+            print("About to display reproduction result...")
+            repro_result = result.get("reproduction_result")
+            if repro_result:
+                self._display_reproduction_result(repro_result)
+            else:
+                print("No reproduction_result found in result")
+                logging.warning("No reproduction_result found in result dictionary")
+            
+            print("_display_results completed successfully")
+        except Exception as e:
+            print(f"Exception in _display_results: {str(e)}")
+            logging.error(f"Exception in _display_results: {str(e)}", exc_info=True)
+            raise
     
     def _display_reproduction_result(self, result: Dict):
         """Display reproduction result in a formatted table"""
-        
-        console.print("\n" + "="*70)
-        console.print("[bold cyan]REPRODUCTION RESULT[/bold cyan]")
-        console.print("="*70)
-        
-        # Summary table
-        table = Table(show_header=False, box=None)
-        table.add_column("Field", style="cyan")
-        table.add_column("Value")
-        
-        bug_reproduced = result.get("bug_reproduced", False)
-        status_icon = "✓" if bug_reproduced else "✗"
-        status_color = "green" if bug_reproduced else "red"
-        
-        table.add_row(
-            "Bug Reproduced",
-            f"[{status_color}]{status_icon} {'YES' if bug_reproduced else 'NO'}[/{status_color}]"
-        )
-        table.add_row(
-            "Confidence Score",
-            f"{result.get('confidence_score', 0):.0%}"
-        )
-        table.add_row(
-            "Steps Executed",
-            str(len(result.get("executed_steps", [])))
-        )
-        
-        console.print(table)
-        
-        # Root Cause Analysis
-        console.print("\n[bold]Root Cause Analysis:[/bold]")
-        console.print(f"  {result.get('root_cause_analysis', 'N/A')}")
-        
-        # Recommendations
-        console.print("\n[bold]Recommendations:[/bold]")
-        for i, rec in enumerate(result.get("recommendations", []), 1):
-            console.print(f"  {i}. {rec}")
-        
-        # Detailed Steps
-        if result.get("executed_steps"):
-            console.print("\n[bold]Execution Steps:[/bold]")
+        try:
+            print("Displaying results in a formatted table...")
             
-            steps_table = Table()
-            steps_table.add_column("Step", style="cyan", width=6)
-            steps_table.add_column("Action", style="yellow", width=12)
-            steps_table.add_column("Status", width=10)
-            steps_table.add_column("Description", width=40)
+            console.print("\n" + "="*70)
+            console.print("[bold cyan]REPRODUCTION RESULT[/bold cyan]")
+            console.print("="*70)
             
-            for step in result["executed_steps"]:
-                status = step.get("status", "unknown")
-                status_icon = "✓" if status == "success" else "✗" if status == "failed" else "⊙"
-                status_color = "green" if status == "success" else "red" if status == "failed" else "yellow"
+            # Summary table
+            table = Table(show_header=False, box=None)
+            table.add_column("Field", style="cyan")
+            table.add_column("Value")
+            
+            bug_reproduced = result.get("bug_reproduced", False)
+            status_icon = "✓" if bug_reproduced else "✗"
+            status_color = "green" if bug_reproduced else "red"
+            
+            table.add_row(
+                "Bug Reproduced",
+                f"[{status_color}]{status_icon} {'YES' if bug_reproduced else 'NO'}[/{status_color}]"
+            )
+            table.add_row(
+                "Confidence Score",
+                f"{result.get('confidence_score', 0):.0%}"
+            )
+            table.add_row(
+                "Steps Executed",
+                str(len(result.get("executed_steps", [])))
+            )
+            
+            console.print(table)
+            
+            # Root Cause Analysis
+            console.print("\n[bold]Root Cause Analysis:[/bold]")
+            console.print(f"  {result.get('root_cause_analysis', 'N/A')}")
+            
+            # Recommendations
+            console.print("\n[bold]Recommendations:[/bold]")
+            for i, rec in enumerate(result.get("recommendations", []), 1):
+                console.print(f"  {i}. {rec}")
+            
+            # Detailed Steps
+            if result.get("executed_steps"):
+                console.print("\n[bold]Execution Steps:[/bold]")
                 
-                steps_table.add_row(
-                    str(step.get("step_number", "?")),
-                    step.get("action", "").upper(),
-                    f"[{status_color}]{status_icon} {status}[/{status_color}]",
-                    step.get("description", "")[:40] + "..."
-                )
+                steps_table = Table()
+                steps_table.add_column("Step", style="cyan", width=6)
+                steps_table.add_column("Action", style="yellow", width=12)
+                steps_table.add_column("Status", width=10)
+                steps_table.add_column("Description", width=40)
+                
+                for step in result["executed_steps"]:
+                    status = step.get("status", "unknown")
+                    status_icon = "✓" if status == "success" else "✗" if status == "failed" else "⊙"
+                    status_color = "green" if status == "success" else "red" if status == "failed" else "yellow"
+                    
+                    steps_table.add_row(
+                        str(step.get("step_number", "?")),
+                        step.get("action", "").upper(),
+                        f"[{status_color}]{status_icon} {status}[/{status_color}]",
+                        step.get("description", "")[:40] + "..."
+                    )
+                
+                console.print(steps_table)
             
-            console.print(steps_table)
-        
-        console.print("="*70)
+            console.print("="*70)
+            
+            print("_display_reproduction_result completed successfully")
+        except Exception as e:
+            print(f"Exception in _display_reproduction_result: {str(e)}")
+            logging.error(f"Exception in _display_reproduction_result: {str(e)}", exc_info=True)
+            raise
     
     def _save_results(self, result: Dict, issue_key: str):
         """Save results to file"""
+
+        print("Saving results started...")
         
         # Create results directory
         results_dir = Path("results")

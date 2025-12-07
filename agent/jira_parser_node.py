@@ -23,15 +23,16 @@ class JiraParserNode:
         self.use_bedrock = os.getenv("USE_BEDROCK", "false").lower() == "true"
         
         if self.use_bedrock:
-            # AWS Bedrock setup
+            # AWS Bedrock setup - Use Converse API for Nova 2
             self.bedrock = boto3.client(
                 service_name='bedrock-runtime',
                 region_name=os.getenv("AWS_REGION", "us-east-1"),
                 aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
                 aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
             )
-            self.model = os.getenv("BEDROCK_MODEL_ID", "anthropic.claude-3-5-sonnet-20241022-v2:0")
-            print("✓ Using AWS Bedrock for AI")
+            # Use inference profile ID for Nova 2
+            self.model = os.getenv("BEDROCK_MODEL_ID", "us.amazon.nova-lite-v1:0")
+            print(f"✓ Using AWS Bedrock Nova 2 (Model: {self.model})")
         else:
             # Anthropic API setup
             self.anthropic = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
@@ -46,15 +47,85 @@ class JiraParserNode:
         except Exception as e:
             raise Exception(f"Failed to fetch JIRA issue {issue_key}: {str(e)}")
     
+    def _extract_text_from_adf(self, content) -> str:
+        """
+        Extract plain text from Atlassian Document Format (ADF)
+        
+        Args:
+            content: Can be a string, dict (ADF), or None
+            
+        Returns:
+            Plain text string
+        """
+        if content is None:
+            return ""
+        
+        if isinstance(content, str):
+            return content
+        
+        if isinstance(content, dict):
+            text_parts = []
+            
+            # Handle ADF structure
+            if 'content' in content:
+                for block in content.get('content', []):
+                    block_type = block.get('type', '')
+                    
+                    if block_type == 'paragraph':
+                        # Extract text from paragraph
+                        for item in block.get('content', []):
+                            if item.get('type') == 'text':
+                                text_parts.append(item.get('text', ''))
+                            elif item.get('type') == 'hardBreak':
+                                text_parts.append('\n')
+                    
+                    elif block_type == 'heading':
+                        # Extract heading text
+                        for item in block.get('content', []):
+                            if item.get('type') == 'text':
+                                text_parts.append('\n' + item.get('text', '') + '\n')
+                    
+                    elif block_type == 'bulletList' or block_type == 'orderedList':
+                        # Extract list items
+                        for list_item in block.get('content', []):
+                            if list_item.get('type') == 'listItem':
+                                for para in list_item.get('content', []):
+                                    for item in para.get('content', []):
+                                        if item.get('type') == 'text':
+                                            text_parts.append('• ' + item.get('text', ''))
+                                text_parts.append('\n')
+                    
+                    elif block_type == 'codeBlock':
+                        # Extract code block
+                        for item in block.get('content', []):
+                            if item.get('type') == 'text':
+                                text_parts.append('\n```\n' + item.get('text', '') + '\n```\n')
+            
+            return ' '.join(text_parts).strip()
+        
+        # Fallback: convert to string
+        return str(content)
+    
     def parse_with_claude(self, raw_issue: Dict[str, Any]) -> JiraIssueDetails:
         """
         Use Claude to parse JIRA issue and extract structured information
         Focuses on extracting application URL and reproduction steps from JIRA ticket
         """
         
+        print("\n" + "="*70)
+        print("PARSING JIRA ISSUE WITH NOVA 2")
+        print("="*70)
+        
         # Extract key fields
         fields = raw_issue.get("fields", {})
         issue_key = raw_issue.get("key", "")
+        
+        # Extract and convert description from ADF to plain text
+        raw_description = fields.get("description", "")
+        description_text = self._extract_text_from_adf(raw_description)
+        
+        print(f"  Description type: {type(raw_description)}")
+        print(f"  Description length: {len(description_text)} characters")
         
         # Try to extract application URL from JIRA first
         application_url = self.jira_client.extract_application_url(raw_issue)
@@ -67,7 +138,7 @@ class JiraParserNode:
         context = {
             "key": issue_key,
             "summary": fields.get("summary", ""),
-            "description": fields.get("description", ""),
+            "description": description_text,  # Use converted text
             "issue_type": fields.get("issuetype", {}).get("name", ""),
             "status": fields.get("status", {}).get("name", ""),
             "priority": fields.get("priority", {}).get("name", "") if fields.get("priority") else None,
@@ -88,7 +159,7 @@ Type: {context['issue_type']}
 Status: {context['status']}
 
 Description:
-{fields.get("description", "No description provided")}
+{description_text}
 
 Environment:
 {context.get('environment', 'Not specified')}
@@ -145,25 +216,32 @@ Be as detailed as possible in reproduction steps - they will be executed automat
         
         try:
             if self.use_bedrock:
-                # AWS Bedrock API call
-                body = json_lib.dumps({
-                    "anthropic_version": "bedrock-2023-05-31",
-                    "max_tokens": 4096,
-                    "temperature": 0,
-                    "messages": [{
-                        "role": "user",
-                        "content": prompt
-                    }]
-                })
+                # AWS Bedrock Converse API call (correct for Nova 2)
+                print(f"  📡 Calling Bedrock Converse API...")
+                print(f"  Model: {self.model}")
+                print(f"  Prompt length: {len(prompt)} characters")
                 
-                response = self.bedrock.invoke_model(
+                response = self.bedrock.converse(
                     modelId=self.model,
-                    body=body
+                    messages=[{
+                        "role": "user",
+                        "content": [{"text": prompt}]
+                    }],
+                    inferenceConfig={
+                        "maxTokens": 4096,
+                        "temperature": 0.0,
+                        "topP": 0.9
+                    }
                 )
                 
-                response_body = json_lib.loads(response['body'].read())
-                response_text = response_body['content'][0]['text']
+                # Extract text from Converse API response
+                response_text = response['output']['message']['content'][0]['text']
+                print(f"  ✓ Received response from Nova 2")
+                print(f"  Response length: {len(response_text)} characters")
+                print(f"  Response preview: {response_text[:200]}...")
+                
             else:
+                print(f"  📡 Calling Anthropic API...")
                 # Anthropic API call
                 response = self.anthropic.messages.create(
                     model=self.model,
@@ -176,12 +254,17 @@ Be as detailed as possible in reproduction steps - they will be executed automat
                 )
                 response_text = response.content[0].text
             
+            print(f"  🔍 Parsing JSON response...")
+            
             # Try to extract JSON from markdown code blocks if present
             json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', response_text, re.DOTALL)
             if json_match:
                 response_text = json_match.group(1)
+                print(f"  ✓ Extracted JSON from code block")
             
             parsed_data = json.loads(response_text)
+            print(f"  ✓ JSON parsed successfully")
+            print(f"  Found {len(parsed_data.get('reproduction_steps', []))} reproduction steps")
             
             # Create ApplicationDetails with validation
             app_details_data = parsed_data.get("application_details", {})
@@ -206,11 +289,11 @@ Be as detailed as possible in reproduction steps - they will be executed automat
             if app_details_data.get("credentials"):
                 app_details.additional_info["credentials"] = app_details_data["credentials"]
             
-            # Create JiraIssueDetails
+            # Create JiraIssueDetails with plain text description
             jira_details = JiraIssueDetails(
                 issue_key=issue_key,
                 summary=context["summary"],
-                description=context["description"],
+                description=description_text,  # Use converted plain text
                 issue_type=context["issue_type"],
                 status=context["status"],
                 priority=context["priority"],
@@ -222,11 +305,18 @@ Be as detailed as possible in reproduction steps - they will be executed automat
                 labels=context["labels"]
             )
             
+            print("="*70 + "\n")
+            
             return jira_details
             
         except json.JSONDecodeError as e:
+            print(f"  ✗ JSON PARSE ERROR: {str(e)}")
+            print(f"  Response was: {response_text[:500]}")
             raise Exception(f"Failed to parse Claude response as JSON: {str(e)}\nResponse: {response_text}")
         except Exception as e:
+            print(f"  ✗ ERROR: {str(e)}")
+            import traceback
+            print(traceback.format_exc())
             raise Exception(f"Failed to parse JIRA issue with Claude: {str(e)}")
     
     def __call__(self, state: AgentState) -> AgentState:
@@ -248,7 +338,7 @@ Be as detailed as possible in reproduction steps - they will be executed automat
             
             # Parse with Claude
             state["status"] = "parsing"
-            messages.append("Parsing issue with Claude Sonnet 4.0...")
+            messages.append("Parsing issue with Nova 2...")
             
             parsed_issue = self.parse_with_claude(raw_data)
             state["parsed_issue"] = parsed_issue.model_dump()

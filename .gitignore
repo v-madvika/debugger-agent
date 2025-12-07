@@ -3,6 +3,10 @@
 .env.local
 .env.*.local
 
+# AWS credentials
+.aws/
+credentials
+
 # Python
 __pycache__/
 *.py[cod]

@@ -1,0 +1,1303 @@
+{
+  "jira_issue_key": "KAN-4",
+  "raw_jira_data": {
+    "expand": "renderedFields,names,schema,transitions,operations,editmeta,changelog,versionedRepresentations",
+    "id": "10003",
+    "self": "https://madvika.atlassian.net/rest/api/3/issue/10003",
+    "key": "KAN-4",
+    "renderedFields": {
+      "statuscategorychangedate": "30/Nov/25 2:12 PM",
+      "issuetype": null,
+      "components": null,
+      "timespent": null,
+      "timeoriginalestimate": null,
+      "project": null,
+      "description": "<p>Description:<br/>\nApplication URL: <a href=\"http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login\" title=\"smart-link\" class=\"external-link\" rel=\"nofollow noreferrer\">http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login</a> </p>\n\n<p>\u00a0</p>\n\n<p>Steps:</p>\n\n<ol>\n\t<li>Navigate to <a href=\"http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login\" title=\"smart-link\" class=\"external-link\" rel=\"nofollow noreferrer\">http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login</a></li>\n\t<li>Enter Email Address: <a href=\"mailto:tech.madvika@gmail.com\" class=\"external-link\" rel=\"nofollow noreferrer\"><font color=\"#ffffff\">tech.madvika@gmail.com</font></a></li>\n\t<li>Enter password: Welcome!</li>\n\t<li>Click \"Sign in\" button (CSS: #login-btn)</li>\n\t<li>verify the Total tasks in the dashboard</li>\n</ol>\n\n\n<p>Expected: Total tasks is showing 0<br/>\nActual: Total tasks must display the correct  count of tasks</p>",
+      "fixVersions": null,
+      "aggregatetimespent": null,
+      "statusCategory": null,
+      "resolution": null,
+      "customfield_10036": null,
+      "timetracking": {},
+      "customfield_10015": null,
+      "security": null,
+      "attachment": [],
+      "aggregatetimeestimate": null,
+      "resolutiondate": null,
+      "workratio": null,
+      "summary": null,
+      "issuerestriction": null,
+      "watches": null,
+      "lastViewed": "Today 2:23 PM",
+      "creator": null,
+      "subtasks": null,
+      "created": "30/Nov/25 2:12 PM",
+      "customfield_10021": null,
+      "reporter": null,
+      "aggregateprogress": null,
+      "priority": null,
+      "customfield_10001": null,
+      "labels": null,
+      "environment": "",
+      "customfield_10019": null,
+      "timeestimate": null,
+      "aggregatetimeoriginalestimate": null,
+      "versions": null,
+      "duedate": null,
+      "progress": null,
+      "issuelinks": null,
+      "votes": null,
+      "comment": {
+        "comments": [],
+        "self": "https://madvika.atlassian.net/rest/api/3/issue/10003/comment",
+        "maxResults": 0,
+        "total": 0,
+        "startAt": 0
+      },
+      "assignee": null,
+      "worklog": {
+        "startAt": 0,
+        "maxResults": 20,
+        "total": 0,
+        "worklogs": []
+      },
+      "updated": "Today 2:54 PM",
+      "status": null
+    },
+    "names": {
+      "statuscategorychangedate": "Status Category Changed",
+      "issuetype": "Issue Type",
+      "components": "Components",
+      "timespent": "Time Spent",
+      "timeoriginalestimate": "Original estimate",
+      "project": "Project",
+      "description": "Description",
+      "fixVersions": "Fix versions",
+      "aggregatetimespent": "\u03a3 Time Spent",
+      "statusCategory": "Status Category",
+      "resolution": "Resolution",
+      "customfield_10036": "Design",
+      "timetracking": "Time tracking",
+      "customfield_10015": "Start date",
+      "security": "Security Level",
+      "attachment": "Attachment",
+      "aggregatetimeestimate": "\u03a3 Remaining Estimate",
+      "resolutiondate": "Resolved",
+      "workratio": "Work Ratio",
+      "summary": "Summary",
+      "issuerestriction": "Restrict to",
+      "watches": "Watchers",
+      "lastViewed": "Last Viewed",
+      "creator": "Creator",
+      "subtasks": "Sub-tasks",
+      "created": "Created",
+      "customfield_10021": "Flagged",
+      "reporter": "Reporter",
+      "aggregateprogress": "\u03a3 Progress",
+      "priority": "Priority",
+      "customfield_10001": "Team",
+      "labels": "Labels",
+      "environment": "Environment",
+      "customfield_10019": "Rank",
+      "timeestimate": "Remaining Estimate",
+      "aggregatetimeoriginalestimate": "\u03a3 Original Estimate",
+      "versions": "Affects versions",
+      "duedate": "Due date",
+      "progress": "Progress",
+      "issuelinks": "Linked Issues",
+      "votes": "Votes",
+      "comment": "Comment",
+      "assignee": "Assignee",
+      "worklog": "Log Work",
+      "updated": "Updated",
+      "status": "Status"
+    },
+    "schema": {
+      "statuscategorychangedate": {
+        "type": "datetime",
+        "system": "statuscategorychangedate"
+      },
+      "issuetype": {
+        "type": "issuetype",
+        "system": "issuetype"
+      },
+      "components": {
+        "type": "array",
+        "items": "component",
+        "system": "components"
+      },
+      "timespent": {
+        "type": "number",
+        "system": "timespent"
+      },
+      "timeoriginalestimate": {
+        "type": "number",
+        "system": "timeoriginalestimate"
+      },
+      "project": {
+        "type": "project",
+        "system": "project"
+      },
+      "description": {
+        "type": "string",
+        "system": "description"
+      },
+      "fixVersions": {
+        "type": "array",
+        "items": "version",
+        "system": "fixVersions"
+      },
+      "aggregatetimespent": {
+        "type": "number",
+        "system": "aggregatetimespent"
+      },
+      "statusCategory": {
+        "type": "statusCategory",
+        "system": "statusCategory"
+      },
+      "resolution": {
+        "type": "resolution",
+        "system": "resolution"
+      },
+      "customfield_10036": {
+        "type": "array",
+        "items": "design.field.name",
+        "custom": "com.atlassian.jira.plugins.jira-development-integration-plugin:designcf",
+        "customId": 10036
+      },
+      "timetracking": {
+        "type": "timetracking",
+        "system": "timetracking"
+      },
+      "customfield_10015": {
+        "type": "date",
+        "custom": "com.atlassian.jira.plugin.system.customfieldtypes:datepicker",
+        "customId": 10015
+      },
+      "security": {
+        "type": "securitylevel",
+        "system": "security"
+      },
+      "attachment": {
+        "type": "array",
+        "items": "attachment",
+        "system": "attachment"
+      },
+      "aggregatetimeestimate": {
+        "type": "number",
+        "system": "aggregatetimeestimate"
+      },
+      "resolutiondate": {
+        "type": "datetime",
+        "system": "resolutiondate"
+      },
+      "workratio": {
+        "type": "number",
+        "system": "workratio"
+      },
+      "summary": {
+        "type": "string",
+        "system": "summary"
+      },
+      "issuerestriction": {
+        "type": "issuerestriction",
+        "system": "issuerestriction"
+      },
+      "watches": {
+        "type": "watches",
+        "system": "watches"
+      },
+      "lastViewed": {
+        "type": "datetime",
+        "system": "lastViewed"
+      },
+      "creator": {
+        "type": "user",
+        "system": "creator"
+      },
+      "subtasks": {
+        "type": "array",
+        "items": "issuelinks",
+        "system": "subtasks"
+      },
+      "created": {
+        "type": "datetime",
+        "system": "created"
+      },
+      "customfield_10021": {
+        "type": "array",
+        "items": "option",
+        "custom": "com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes",
+        "customId": 10021
+      },
+      "reporter": {
+        "type": "user",
+        "system": "reporter"
+      },
+      "aggregateprogress": {
+        "type": "progress",
+        "system": "aggregateprogress"
+      },
+      "priority": {
+        "type": "priority",
+        "system": "priority"
+      },
+      "customfield_10001": {
+        "type": "team",
+        "custom": "com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team",
+        "customId": 10001,
+        "configuration": {
+          "com.atlassian.jira.plugin.system.customfieldtypes:atlassian-team": true
+        }
+      },
+      "labels": {
+        "type": "array",
+        "items": "string",
+        "system": "labels"
+      },
+      "environment": {
+        "type": "string",
+        "system": "environment"
+      },
+      "customfield_10019": {
+        "type": "any",
+        "custom": "com.pyxis.greenhopper.jira:gh-lexo-rank",
+        "customId": 10019
+      },
+      "timeestimate": {
+        "type": "number",
+        "system": "timeestimate"
+      },
+      "aggregatetimeoriginalestimate": {
+        "type": "number",
+        "system": "aggregatetimeoriginalestimate"
+      },
+      "versions": {
+        "type": "array",
+        "items": "version",
+        "system": "versions"
+      },
+      "duedate": {
+        "type": "date",
+        "system": "duedate"
+      },
+      "progress": {
+        "type": "progress",
+        "system": "progress"
+      },
+      "issuelinks": {
+        "type": "array",
+        "items": "issuelinks",
+        "system": "issuelinks"
+      },
+      "votes": {
+        "type": "votes",
+        "system": "votes"
+      },
+      "comment": {
+        "type": "comments-page",
+        "system": "comment"
+      },
+      "assignee": {
+        "type": "user",
+        "system": "assignee"
+      },
+      "worklog": {
+        "type": "array",
+        "items": "worklog",
+        "system": "worklog"
+      },
+      "updated": {
+        "type": "datetime",
+        "system": "updated"
+      },
+      "status": {
+        "type": "status",
+        "system": "status"
+      }
+    },
+    "transitions": [
+      {
+        "id": "11",
+        "name": "To Do",
+        "to": {
+          "self": "https://madvika.atlassian.net/rest/api/3/status/10000",
+          "description": "",
+          "iconUrl": "https://madvika.atlassian.net/images/icons/statuses/generic.png",
+          "name": "To Do",
+          "id": "10000",
+          "statusCategory": {
+            "self": "https://madvika.atlassian.net/rest/api/3/statuscategory/2",
+            "id": 2,
+            "key": "new",
+            "colorName": "blue-gray",
+            "name": "To Do"
+          }
+        },
+        "hasScreen": false,
+        "isGlobal": true,
+        "isInitial": false,
+        "isAvailable": true,
+        "isConditional": false,
+        "isLooped": false
+      },
+      {
+        "id": "21",
+        "name": "In Progress",
+        "to": {
+          "self": "https://madvika.atlassian.net/rest/api/3/status/10001",
+          "description": "",
+          "iconUrl": "https://madvika.atlassian.net/images/icons/statuses/generic.png",
+          "name": "In Progress",
+          "id": "10001",
+          "statusCategory": {
+            "self": "https://madvika.atlassian.net/rest/api/3/statuscategory/4",
+            "id": 4,
+            "key": "indeterminate",
+            "colorName": "yellow",
+            "name": "In Progress"
+          }
+        },
+        "hasScreen": false,
+        "isGlobal": true,
+        "isInitial": false,
+        "isAvailable": true,
+        "isConditional": false,
+        "isLooped": false
+      },
+      {
+        "id": "31",
+        "name": "In Review",
+        "to": {
+          "self": "https://madvika.atlassian.net/rest/api/3/status/10002",
+          "description": "",
+          "iconUrl": "https://madvika.atlassian.net/images/icons/statuses/generic.png",
+          "name": "In Review",
+          "id": "10002",
+          "statusCategory": {
+            "self": "https://madvika.atlassian.net/rest/api/3/statuscategory/4",
+            "id": 4,
+            "key": "indeterminate",
+            "colorName": "yellow",
+            "name": "In Progress"
+          }
+        },
+        "hasScreen": false,
+        "isGlobal": true,
+        "isInitial": false,
+        "isAvailable": true,
+        "isConditional": false,
+        "isLooped": false
+      },
+      {
+        "id": "41",
+        "name": "Done",
+        "to": {
+          "self": "https://madvika.atlassian.net/rest/api/3/status/10003",
+          "description": "",
+          "iconUrl": "https://madvika.atlassian.net/images/icons/statuses/generic.png",
+          "name": "Done",
+          "id": "10003",
+          "statusCategory": {
+            "self": "https://madvika.atlassian.net/rest/api/3/statuscategory/3",
+            "id": 3,
+            "key": "done",
+            "colorName": "green",
+            "name": "Done"
+          }
+        },
+        "hasScreen": false,
+        "isGlobal": true,
+        "isInitial": false,
+        "isAvailable": true,
+        "isConditional": false,
+        "isLooped": false
+      }
+    ],
+    "fields": {
+      "statuscategorychangedate": "2025-11-30T14:12:41.364+0530",
+      "issuetype": {
+        "self": "https://madvika.atlassian.net/rest/api/3/issuetype/10007",
+        "id": "10007",
+        "description": "Bugs track problems or errors.",
+        "iconUrl": "https://madvika.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10303?size=medium",
+        "name": "Bug",
+        "subtask": false,
+        "avatarId": 10303,
+        "entityId": "39e2c958-7708-470f-ab63-9412b23de48c",
+        "hierarchyLevel": 0
+      },
+      "components": [],
+      "timespent": null,
+      "timeoriginalestimate": null,
+      "project": {
+        "self": "https://madvika.atlassian.net/rest/api/3/project/10000",
+        "id": "10000",
+        "key": "KAN",
+        "name": "SmartTasks",
+        "projectTypeKey": "software",
+        "simplified": true,
+        "avatarUrls": {
+          "48x48": "https://madvika.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10402",
+          "24x24": "https://madvika.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10402?size=small",
+          "16x16": "https://madvika.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10402?size=xsmall",
+          "32x32": "https://madvika.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10402?size=medium"
+        }
+      },
+      "description": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Description:"
+              },
+              {
+                "type": "hardBreak"
+              },
+              {
+                "type": "text",
+                "text": "Application URL: "
+              },
+              {
+                "type": "inlineCard",
+                "attrs": {
+                  "url": "http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login"
+                }
+              },
+              {
+                "type": "text",
+                "text": " "
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "\u00a0"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Steps:"
+              }
+            ]
+          },
+          {
+            "type": "orderedList",
+            "attrs": {
+              "order": 1
+            },
+            "content": [
+              {
+                "type": "listItem",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Navigate to "
+                      },
+                      {
+                        "type": "inlineCard",
+                        "attrs": {
+                          "url": "http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login"
+                        }
+                      },
+                      {
+                        "type": "text",
+                        "text": " "
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Enter Email Address: "
+                      },
+                      {
+                        "type": "text",
+                        "text": "tech.madvika@gmail.com",
+                        "marks": [
+                          {
+                            "type": "link",
+                            "attrs": {
+                              "href": "mailto:tech.madvika@gmail.com"
+                            }
+                          },
+                          {
+                            "type": "textColor",
+                            "attrs": {
+                              "color": "#ffffff"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Enter password: Welcome!"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Click \"Sign in\" button (CSS: #login-btn)"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "verify the Total tasks in the dashboard"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Expected: Total tasks is showing 0"
+              },
+              {
+                "type": "hardBreak"
+              },
+              {
+                "type": "text",
+                "text": "Actual: Total tasks must display the correct  count of tasks"
+              },
+              {
+                "type": "hardBreak"
+              }
+            ]
+          }
+        ]
+      },
+      "fixVersions": [],
+      "aggregatetimespent": null,
+      "statusCategory": {
+        "self": "https://madvika.atlassian.net/rest/api/3/statuscategory/2",
+        "id": 2,
+        "key": "new",
+        "colorName": "blue-gray",
+        "name": "To Do"
+      },
+      "resolution": null,
+      "customfield_10036": null,
+      "timetracking": {},
+      "customfield_10015": null,
+      "security": null,
+      "attachment": [],
+      "aggregatetimeestimate": null,
+      "resolutiondate": null,
+      "workratio": -1,
+      "summary": "Login is not working in Smart tasks",
+      "issuerestriction": {
+        "issuerestrictions": {},
+        "shouldDisplay": true
+      },
+      "watches": {
+        "self": "https://madvika.atlassian.net/rest/api/3/issue/KAN-4/watchers",
+        "watchCount": 0,
+        "isWatching": false
+      },
+      "lastViewed": "2025-12-07T14:23:14.935+0530",
+      "creator": {
+        "self": "https://madvika.atlassian.net/rest/api/3/user?accountId=712020%3Ae4d6e724-98f0-4b4a-a54d-08a7b8369def",
+        "accountId": "712020:e4d6e724-98f0-4b4a-a54d-08a7b8369def",
+        "emailAddress": "tech.madvika@gmail.com",
+        "avatarUrls": {
+          "48x48": "https://secure.gravatar.com/avatar/677c363a6a1782e1b5dfaa4b4f7a300b?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FMV-1.png",
+          "24x24": "https://secure.gravatar.com/avatar/677c363a6a1782e1b5dfaa4b4f7a300b?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FMV-1.png",
+          "16x16": "https://secure.gravatar.com/avatar/677c363a6a1782e1b5dfaa4b4f7a300b?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FMV-1.png",
+          "32x32": "https://secure.gravatar.com/avatar/677c363a6a1782e1b5dfaa4b4f7a300b?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FMV-1.png"
+        },
+        "displayName": "Madvika V",
+        "active": true,
+        "timeZone": "Asia/Calcutta",
+        "accountType": "atlassian"
+      },
+      "subtasks": [],
+      "created": "2025-11-30T14:12:40.903+0530",
+      "customfield_10021": null,
+      "reporter": {
+        "self": "https://madvika.atlassian.net/rest/api/3/user?accountId=712020%3Ae4d6e724-98f0-4b4a-a54d-08a7b8369def",
+        "accountId": "712020:e4d6e724-98f0-4b4a-a54d-08a7b8369def",
+        "emailAddress": "tech.madvika@gmail.com",
+        "avatarUrls": {
+          "48x48": "https://secure.gravatar.com/avatar/677c363a6a1782e1b5dfaa4b4f7a300b?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FMV-1.png",
+          "24x24": "https://secure.gravatar.com/avatar/677c363a6a1782e1b5dfaa4b4f7a300b?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FMV-1.png",
+          "16x16": "https://secure.gravatar.com/avatar/677c363a6a1782e1b5dfaa4b4f7a300b?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FMV-1.png",
+          "32x32": "https://secure.gravatar.com/avatar/677c363a6a1782e1b5dfaa4b4f7a300b?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FMV-1.png"
+        },
+        "displayName": "Madvika V",
+        "active": true,
+        "timeZone": "Asia/Calcutta",
+        "accountType": "atlassian"
+      },
+      "aggregateprogress": {
+        "progress": 0,
+        "total": 0
+      },
+      "priority": {
+        "self": "https://madvika.atlassian.net/rest/api/3/priority/3",
+        "iconUrl": "https://madvika.atlassian.net/images/icons/priorities/medium_new.svg",
+        "name": "Medium",
+        "id": "3"
+      },
+      "customfield_10001": null,
+      "labels": [],
+      "environment": null,
+      "customfield_10019": "0|i0000n:",
+      "timeestimate": null,
+      "aggregatetimeoriginalestimate": null,
+      "versions": [],
+      "duedate": null,
+      "progress": {
+        "progress": 0,
+        "total": 0
+      },
+      "issuelinks": [],
+      "votes": {
+        "self": "https://madvika.atlassian.net/rest/api/3/issue/KAN-4/votes",
+        "votes": 0,
+        "hasVoted": false
+      },
+      "comment": {
+        "comments": [],
+        "self": "https://madvika.atlassian.net/rest/api/3/issue/10003/comment",
+        "maxResults": 0,
+        "total": 0,
+        "startAt": 0
+      },
+      "assignee": {
+        "self": "https://madvika.atlassian.net/rest/api/3/user?accountId=712020%3Ae4d6e724-98f0-4b4a-a54d-08a7b8369def",
+        "accountId": "712020:e4d6e724-98f0-4b4a-a54d-08a7b8369def",
+        "emailAddress": "tech.madvika@gmail.com",
+        "avatarUrls": {
+          "48x48": "https://secure.gravatar.com/avatar/677c363a6a1782e1b5dfaa4b4f7a300b?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FMV-1.png",
+          "24x24": "https://secure.gravatar.com/avatar/677c363a6a1782e1b5dfaa4b4f7a300b?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FMV-1.png",
+          "16x16": "https://secure.gravatar.com/avatar/677c363a6a1782e1b5dfaa4b4f7a300b?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FMV-1.png",
+          "32x32": "https://secure.gravatar.com/avatar/677c363a6a1782e1b5dfaa4b4f7a300b?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FMV-1.png"
+        },
+        "displayName": "Madvika V",
+        "active": true,
+        "timeZone": "Asia/Calcutta",
+        "accountType": "atlassian"
+      },
+      "worklog": {
+        "startAt": 0,
+        "maxResults": 20,
+        "total": 0,
+        "worklogs": []
+      },
+      "updated": "2025-12-07T14:54:21.555+0530",
+      "status": {
+        "self": "https://madvika.atlassian.net/rest/api/3/status/10000",
+        "description": "",
+        "iconUrl": "https://madvika.atlassian.net/images/icons/statuses/generic.png",
+        "name": "To Do",
+        "id": "10000",
+        "statusCategory": {
+          "self": "https://madvika.atlassian.net/rest/api/3/statuscategory/2",
+          "id": 2,
+          "key": "new",
+          "colorName": "blue-gray",
+          "name": "To Do"
+        }
+      }
+    }
+  },
+  "parsed_issue": {
+    "issue_key": "KAN-4",
+    "summary": "Login is not working in Smart tasks",
+    "description": "Description: \n Application URL:    \u00a0 Steps: \u2022 Navigate to  \u2022   \n \u2022 Enter Email Address:  \u2022 tech.madvika@gmail.com \n \u2022 Enter password: Welcome! \n \u2022 Click \"Sign in\" button (CSS: #login-btn) \n \u2022 verify the Total tasks in the dashboard \n Expected: Total tasks is showing 0 \n Actual: Total tasks must display the correct  count of tasks",
+    "issue_type": "Bug",
+    "status": "To Do",
+    "priority": "Medium",
+    "reproduction_steps": [
+      "Step 1: Navigate to http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login",
+      "Step 2: Enter Email Address: tech.madvika@gmail.com in the Email Address field",
+      "Step 3: Enter password: Welcome! in the password field",
+      "Step 4: Click on the 'Sign in' button with the CSS selector #login-btn",
+      "Step 5: Verify the Total tasks in the dashboard"
+    ],
+    "expected_behavior": "The Total tasks should display the correct count of tasks",
+    "actual_behavior": "The Total tasks is showing 0, which is incorrect",
+    "application_details": {
+      "name": "Smart Tasks",
+      "version": "null",
+      "environment": "null",
+      "url": "http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login",
+      "platform": "web",
+      "additional_info": {
+        "browser": "null",
+        "os": "null",
+        "credentials": {
+          "username": "tech.madvika@gmail.com",
+          "password": "Welcome!"
+        }
+      }
+    },
+    "attachments": [],
+    "labels": []
+  },
+  "reproduction_plan": {
+    "issue_key": "KAN-4",
+    "reproduction_steps": [
+      {
+        "step_number": 1,
+        "description": "Navigate to the application",
+        "action": "navigate",
+        "target": "application URL",
+        "expected_result": "Application homepage is displayed",
+        "actual_result": "{\"selectors\": [], \"value\": \"http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login\", \"wait_condition\": \"page is loaded\", \"validation\": \"\", \"screenshot\": true}",
+        "status": "pending",
+        "error": null
+      },
+      {
+        "step_number": 2,
+        "description": "Enter email address in the login form",
+        "action": "fill",
+        "target": "Email Address field",
+        "expected_result": "Email field is filled with tech.madvika@gmail.com",
+        "actual_result": "{\"selectors\": [\"#email\", \"#username\", \"#user\", \"#login-email\", \"input[name='email']\", \"input[name='username']\", \"input[name='user']\", \"input[type='email']\", \"input[placeholder*='email' i]\", \"input[placeholder*='username' i]\", \".email-input\", \".login-email\", \"input[aria-label*='email' i]\", \"input[data-testid='email']\"], \"value\": \"tech.madvika@gmail.com\", \"wait_condition\": \"input is visible and enabled\", \"validation\": \"\", \"screenshot\": true}",
+        "status": "pending",
+        "error": null
+      },
+      {
+        "step_number": 3,
+        "description": "Enter password in the login form",
+        "action": "fill",
+        "target": "password field",
+        "expected_result": "Password field is filled with Welcome!",
+        "actual_result": "{\"selectors\": [\"#password\", \"#pass\", \"#login-password\", \"input[name='password']\", \"input[name='pass']\", \"input[type='password']\", \"input[placeholder*='password' i]\", \".password-input\", \".login-password\", \"input[aria-label*='password' i]\", \"input[data-testid='password']\"], \"value\": \"Welcome!\", \"wait_condition\": \"input is visible and enabled\", \"validation\": \"\", \"screenshot\": true}",
+        "status": "pending",
+        "error": null
+      },
+      {
+        "step_number": 4,
+        "description": "Click on the 'Sign in' button",
+        "action": "click",
+        "target": "'Sign in' button",
+        "expected_result": "Login button is clicked",
+        "actual_result": "{\"selectors\": [\"#login-btn\", \"#submit-login\", \"#sign-in-button\", \"button[type='submit']\", \"button[aria-label*='login']\", \"input[type='submit']\", \"button[name='login']\", \"button[data-testid='login-button']\", \"button[aria-label*='sign in']\", \"button[aria-label*='submit']\", \"button[aria-label*='login']\"], \"value\": \"#login-btn\", \"wait_condition\": \"button is visible and enabled\", \"validation\": \"\", \"screenshot\": true}",
+        "status": "pending",
+        "error": null
+      },
+      {
+        "step_number": 5,
+        "description": "Verify the Total tasks in the dashboard",
+        "action": "verify",
+        "target": "Total tasks in the dashboard",
+        "expected_result": "Total tasks should display the correct count of tasks",
+        "actual_result": "{\"selectors\": [\"#total-tasks\", \".dashboard-tasks-count\", \".task-count\", \"span[data-testid='total-tasks']\", \"div[aria-label*='Total tasks']\", \"div[data-testid='task-count']\", \"div[class*='task-count']\"], \"value\": \"Correct count of tasks\", \"wait_condition\": \"Total tasks element is visible\", \"validation\": \"\", \"screenshot\": true}",
+        "status": "pending",
+        "error": null
+      }
+    ],
+    "prerequisites": [
+      "Browser must be installed",
+      "Network access to http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login"
+    ],
+    "environment_setup": {
+      "application_url": "http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login",
+      "credentials": {
+        "username": "tech.madvika@gmail.com",
+        "password": "Welcome!"
+      }
+    },
+    "expected_outcome": "The Total tasks should display the correct count of tasks"
+  },
+  "current_step": 5,
+  "reproduction_result": {
+    "issue_key": "KAN-4",
+    "bug_reproduced": false,
+    "executed_steps": [
+      {
+        "step_number": 1,
+        "description": "Navigate to the application",
+        "action": "navigate",
+        "target": "application URL",
+        "expected_result": "Application homepage is displayed",
+        "actual_result": "Failed due to automation error",
+        "status": "failed",
+        "error": "Browser automation error: 'ReproductionStep' object has no attribute 'get'"
+      },
+      {
+        "step_number": 2,
+        "description": "Enter email address in the login form",
+        "action": "fill",
+        "target": "Email Address field",
+        "expected_result": "Email field is filled with tech.madvika@gmail.com",
+        "actual_result": "Failed due to automation error",
+        "status": "failed",
+        "error": "Browser automation error: 'ReproductionStep' object has no attribute 'get'"
+      },
+      {
+        "step_number": 3,
+        "description": "Enter password in the login form",
+        "action": "fill",
+        "target": "password field",
+        "expected_result": "Password field is filled with Welcome!",
+        "actual_result": "Failed due to automation error",
+        "status": "failed",
+        "error": "Browser automation error: 'ReproductionStep' object has no attribute 'get'"
+      },
+      {
+        "step_number": 4,
+        "description": "Click on the 'Sign in' button",
+        "action": "click",
+        "target": "'Sign in' button",
+        "expected_result": "Login button is clicked",
+        "actual_result": "Failed due to automation error",
+        "status": "failed",
+        "error": "Browser automation error: 'ReproductionStep' object has no attribute 'get'"
+      },
+      {
+        "step_number": 5,
+        "description": "Verify the Total tasks in the dashboard",
+        "action": "verify",
+        "target": "Total tasks in the dashboard",
+        "expected_result": "Total tasks should display the correct count of tasks",
+        "actual_result": "Failed due to automation error",
+        "status": "failed",
+        "error": "Browser automation error: 'ReproductionStep' object has no attribute 'get'"
+      }
+    ],
+    "screenshots": [],
+    "logs": [
+      "2025-12-07T15:05:37.564841: Reproduction attempt completed"
+    ],
+    "root_cause_analysis": "The bug was not successfully reproduced due to a consistent automation error across all steps. The error message 'Browser automation error: 'ReproductionStep' object has no attribute 'get'' suggests that there is an issue with the automation script, specifically with the methods used to interact with the browser elements. This error prevented the automation from completing any of the steps, including verifying the total tasks count.",
+    "recommendations": [
+      "Investigate and fix the automation script to ensure that the 'ReproductionStep' object has the necessary attributes and methods to interact with browser elements.",
+      "Re-run the automation script after fixing the identified issues to verify if the bug can be successfully reproduced and to check if the total tasks count is displayed correctly."
+    ],
+    "confidence_score": 0.75
+  },
+  "messages": [
+    "Fetching JIRA issue: KAN-4",
+    "\u2713 Successfully fetched JIRA issue KAN-4",
+    "Parsing issue with Nova 2...",
+    "\u2713 Parsed 5 reproduction steps",
+    "  Application: Smart Tasks",
+    "  Platform: web",
+    "  \ud83c\udf10 Application URL: http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login",
+    "Fetching JIRA issue: KAN-4",
+    "\u2713 Successfully fetched JIRA issue KAN-4",
+    "Parsing issue with Nova 2...",
+    "\u2713 Parsed 5 reproduction steps",
+    "  Application: Smart Tasks",
+    "  Platform: web",
+    "  \ud83c\udf10 Application URL: http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login",
+    "Creating detailed reproduction plan with Claude...",
+    "\u2713 Created reproduction plan with 5 steps",
+    "  Prerequisites: 2",
+    "  Expected outcome: The Total tasks should display the correct count of tasks...",
+    "\n=== Reproduction Plan ===",
+    "  Step 1: [NAVIGATE] Navigate to the application...",
+    "  Step 2: [FILL] Enter email address in the login form...",
+    "  Step 3: [FILL] Enter password in the login form...",
+    "  Step 4: [CLICK] Click on the 'Sign in' button...",
+    "  Step 5: [VERIFY] Verify the Total tasks in the dashboard...",
+    "Fetching JIRA issue: KAN-4",
+    "\u2713 Successfully fetched JIRA issue KAN-4",
+    "Parsing issue with Nova 2...",
+    "\u2713 Parsed 5 reproduction steps",
+    "  Application: Smart Tasks",
+    "  Platform: web",
+    "  \ud83c\udf10 Application URL: http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login",
+    "Fetching JIRA issue: KAN-4",
+    "\u2713 Successfully fetched JIRA issue KAN-4",
+    "Parsing issue with Nova 2...",
+    "\u2713 Parsed 5 reproduction steps",
+    "  Application: Smart Tasks",
+    "  Platform: web",
+    "  \ud83c\udf10 Application URL: http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login",
+    "Creating detailed reproduction plan with Claude...",
+    "\u2713 Created reproduction plan with 5 steps",
+    "  Prerequisites: 2",
+    "  Expected outcome: The Total tasks should display the correct count of tasks...",
+    "\n=== Reproduction Plan ===",
+    "  Step 1: [NAVIGATE] Navigate to the application...",
+    "  Step 2: [FILL] Enter email address in the login form...",
+    "  Step 3: [FILL] Enter password in the login form...",
+    "  Step 4: [CLICK] Click on the 'Sign in' button...",
+    "  Step 5: [VERIFY] Verify the Total tasks in the dashboard...",
+    "\nExecuting reproduction plan (5 steps)...",
+    "\n============================================================",
+    "Executing 5 steps...",
+    "Mode: REAL BROWSER",
+    "============================================================",
+    "\n  Step 1: Navigate to the application...",
+    "    \u2717 FAILED: Failed due to automation error...",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "\n  Step 2: Enter email address in the login form...",
+    "    \u2717 FAILED: Failed due to automation error...",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "\n  Step 3: Enter password in the login form...",
+    "    \u2717 FAILED: Failed due to automation error...",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "\n  Step 4: Click on the 'Sign in' button...",
+    "    \u2717 FAILED: Failed due to automation error...",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "\n  Step 5: Verify the Total tasks in the dashboard...",
+    "    \u2717 FAILED: Failed due to automation error...",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "\nAnalyzing reproduction results...",
+    "\n============================================================",
+    "=== REPRODUCTION RESULT ===",
+    "============================================================",
+    "Bug Reproduced: NO \u2717",
+    "Confidence: 75%",
+    "\nRoot Cause Analysis:",
+    "  The bug was not successfully reproduced due to a consistent automation error across all steps. The error message 'Browser automation error: 'ReproductionStep' object has no attribute 'get'' suggests that there is an issue with the automation script, specifically with the methods used to interact with the browser elements. This error prevented the automation from completing any of the steps, including verifying the total tasks count.",
+    "\nRecommendations:",
+    "  1. Investigate and fix the automation script to ensure that the 'ReproductionStep' object has the necessary attributes and methods to interact with browser elements.",
+    "  2. Re-run the automation script after fixing the identified issues to verify if the bug can be successfully reproduced and to check if the total tasks count is displayed correctly.",
+    "Fetching JIRA issue: KAN-4",
+    "\u2713 Successfully fetched JIRA issue KAN-4",
+    "Parsing issue with Nova 2...",
+    "\u2713 Parsed 5 reproduction steps",
+    "  Application: Smart Tasks",
+    "  Platform: web",
+    "  \ud83c\udf10 Application URL: http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login",
+    "Fetching JIRA issue: KAN-4",
+    "\u2713 Successfully fetched JIRA issue KAN-4",
+    "Parsing issue with Nova 2...",
+    "\u2713 Parsed 5 reproduction steps",
+    "  Application: Smart Tasks",
+    "  Platform: web",
+    "  \ud83c\udf10 Application URL: http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login",
+    "Creating detailed reproduction plan with Claude...",
+    "\u2713 Created reproduction plan with 5 steps",
+    "  Prerequisites: 2",
+    "  Expected outcome: The Total tasks should display the correct count of tasks...",
+    "\n=== Reproduction Plan ===",
+    "  Step 1: [NAVIGATE] Navigate to the application...",
+    "  Step 2: [FILL] Enter email address in the login form...",
+    "  Step 3: [FILL] Enter password in the login form...",
+    "  Step 4: [CLICK] Click on the 'Sign in' button...",
+    "  Step 5: [VERIFY] Verify the Total tasks in the dashboard...",
+    "Fetching JIRA issue: KAN-4",
+    "\u2713 Successfully fetched JIRA issue KAN-4",
+    "Parsing issue with Nova 2...",
+    "\u2713 Parsed 5 reproduction steps",
+    "  Application: Smart Tasks",
+    "  Platform: web",
+    "  \ud83c\udf10 Application URL: http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login",
+    "Fetching JIRA issue: KAN-4",
+    "\u2713 Successfully fetched JIRA issue KAN-4",
+    "Parsing issue with Nova 2...",
+    "\u2713 Parsed 5 reproduction steps",
+    "  Application: Smart Tasks",
+    "  Platform: web",
+    "  \ud83c\udf10 Application URL: http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login",
+    "Creating detailed reproduction plan with Claude...",
+    "\u2713 Created reproduction plan with 5 steps",
+    "  Prerequisites: 2",
+    "  Expected outcome: The Total tasks should display the correct count of tasks...",
+    "\n=== Reproduction Plan ===",
+    "  Step 1: [NAVIGATE] Navigate to the application...",
+    "  Step 2: [FILL] Enter email address in the login form...",
+    "  Step 3: [FILL] Enter password in the login form...",
+    "  Step 4: [CLICK] Click on the 'Sign in' button...",
+    "  Step 5: [VERIFY] Verify the Total tasks in the dashboard...",
+    "\nExecuting reproduction plan (5 steps)...",
+    "\n============================================================",
+    "Executing 5 steps...",
+    "Mode: REAL BROWSER",
+    "============================================================",
+    "\n  Step 1: Navigate to the application...",
+    "    \u2717 FAILED: Failed due to automation error...",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "\n  Step 2: Enter email address in the login form...",
+    "    \u2717 FAILED: Failed due to automation error...",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "\n  Step 3: Enter password in the login form...",
+    "    \u2717 FAILED: Failed due to automation error...",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "\n  Step 4: Click on the 'Sign in' button...",
+    "    \u2717 FAILED: Failed due to automation error...",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "\n  Step 5: Verify the Total tasks in the dashboard...",
+    "    \u2717 FAILED: Failed due to automation error...",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "\nAnalyzing reproduction results...",
+    "\n============================================================",
+    "=== REPRODUCTION RESULT ===",
+    "============================================================",
+    "Bug Reproduced: NO \u2717",
+    "Confidence: 75%",
+    "\nRoot Cause Analysis:",
+    "  The bug was not successfully reproduced due to a consistent automation error across all steps. The error message 'Browser automation error: 'ReproductionStep' object has no attribute 'get'' suggests that there is an issue with the automation script, specifically with the methods used to interact with the browser elements. This error prevented the automation from completing any of the steps, including verifying the total tasks count.",
+    "\nRecommendations:",
+    "  1. Investigate and fix the automation script to ensure that the 'ReproductionStep' object has the necessary attributes and methods to interact with browser elements.",
+    "  2. Re-run the automation script after fixing the identified issues to verify if the bug can be successfully reproduced and to check if the total tasks count is displayed correctly.",
+    "\n============================================================",
+    "=== FINAL REPRODUCTION REPORT ===",
+    "============================================================",
+    "Issue: KAN-4",
+    "Bug Reproduced: NO",
+    "Confidence Score: 75%",
+    "Steps Executed: 5",
+    "",
+    "Root Cause Analysis:",
+    "The bug was not successfully reproduced due to a consistent automation error across all steps. The error message 'Browser automation error: 'ReproductionStep' object has no attribute 'get'' suggests that there is an issue with the automation script, specifically with the methods used to interact with the browser elements. This error prevented the automation from completing any of the steps, including verifying the total tasks count.",
+    "",
+    "Recommendations:",
+    "  1. Investigate and fix the automation script to ensure that the 'ReproductionStep' object has the necessary attributes and methods to interact with browser elements.",
+    "  2. Re-run the automation script after fixing the identified issues to verify if the bug can be successfully reproduced and to check if the total tasks count is displayed correctly.",
+    "",
+    "Detailed Steps:",
+    "  Step 1: [FAILED] Navigate to the application",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "  Step 2: [FAILED] Enter email address in the login form",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "  Step 3: [FAILED] Enter password in the login form",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "  Step 4: [FAILED] Click on the 'Sign in' button",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "  Step 5: [FAILED] Verify the Total tasks in the dashboard",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "============================================================",
+    "Fetching JIRA issue: KAN-4",
+    "\u2713 Successfully fetched JIRA issue KAN-4",
+    "Parsing issue with Nova 2...",
+    "\u2713 Parsed 5 reproduction steps",
+    "  Application: Smart Tasks",
+    "  Platform: web",
+    "  \ud83c\udf10 Application URL: http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login",
+    "Fetching JIRA issue: KAN-4",
+    "\u2713 Successfully fetched JIRA issue KAN-4",
+    "Parsing issue with Nova 2...",
+    "\u2713 Parsed 5 reproduction steps",
+    "  Application: Smart Tasks",
+    "  Platform: web",
+    "  \ud83c\udf10 Application URL: http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login",
+    "Creating detailed reproduction plan with Claude...",
+    "\u2713 Created reproduction plan with 5 steps",
+    "  Prerequisites: 2",
+    "  Expected outcome: The Total tasks should display the correct count of tasks...",
+    "\n=== Reproduction Plan ===",
+    "  Step 1: [NAVIGATE] Navigate to the application...",
+    "  Step 2: [FILL] Enter email address in the login form...",
+    "  Step 3: [FILL] Enter password in the login form...",
+    "  Step 4: [CLICK] Click on the 'Sign in' button...",
+    "  Step 5: [VERIFY] Verify the Total tasks in the dashboard...",
+    "Fetching JIRA issue: KAN-4",
+    "\u2713 Successfully fetched JIRA issue KAN-4",
+    "Parsing issue with Nova 2...",
+    "\u2713 Parsed 5 reproduction steps",
+    "  Application: Smart Tasks",
+    "  Platform: web",
+    "  \ud83c\udf10 Application URL: http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login",
+    "Fetching JIRA issue: KAN-4",
+    "\u2713 Successfully fetched JIRA issue KAN-4",
+    "Parsing issue with Nova 2...",
+    "\u2713 Parsed 5 reproduction steps",
+    "  Application: Smart Tasks",
+    "  Platform: web",
+    "  \ud83c\udf10 Application URL: http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login",
+    "Creating detailed reproduction plan with Claude...",
+    "\u2713 Created reproduction plan with 5 steps",
+    "  Prerequisites: 2",
+    "  Expected outcome: The Total tasks should display the correct count of tasks...",
+    "\n=== Reproduction Plan ===",
+    "  Step 1: [NAVIGATE] Navigate to the application...",
+    "  Step 2: [FILL] Enter email address in the login form...",
+    "  Step 3: [FILL] Enter password in the login form...",
+    "  Step 4: [CLICK] Click on the 'Sign in' button...",
+    "  Step 5: [VERIFY] Verify the Total tasks in the dashboard...",
+    "\nExecuting reproduction plan (5 steps)...",
+    "\n============================================================",
+    "Executing 5 steps...",
+    "Mode: REAL BROWSER",
+    "============================================================",
+    "\n  Step 1: Navigate to the application...",
+    "    \u2717 FAILED: Failed due to automation error...",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "\n  Step 2: Enter email address in the login form...",
+    "    \u2717 FAILED: Failed due to automation error...",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "\n  Step 3: Enter password in the login form...",
+    "    \u2717 FAILED: Failed due to automation error...",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "\n  Step 4: Click on the 'Sign in' button...",
+    "    \u2717 FAILED: Failed due to automation error...",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "\n  Step 5: Verify the Total tasks in the dashboard...",
+    "    \u2717 FAILED: Failed due to automation error...",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "\nAnalyzing reproduction results...",
+    "\n============================================================",
+    "=== REPRODUCTION RESULT ===",
+    "============================================================",
+    "Bug Reproduced: NO \u2717",
+    "Confidence: 75%",
+    "\nRoot Cause Analysis:",
+    "  The bug was not successfully reproduced due to a consistent automation error across all steps. The error message 'Browser automation error: 'ReproductionStep' object has no attribute 'get'' suggests that there is an issue with the automation script, specifically with the methods used to interact with the browser elements. This error prevented the automation from completing any of the steps, including verifying the total tasks count.",
+    "\nRecommendations:",
+    "  1. Investigate and fix the automation script to ensure that the 'ReproductionStep' object has the necessary attributes and methods to interact with browser elements.",
+    "  2. Re-run the automation script after fixing the identified issues to verify if the bug can be successfully reproduced and to check if the total tasks count is displayed correctly.",
+    "Fetching JIRA issue: KAN-4",
+    "\u2713 Successfully fetched JIRA issue KAN-4",
+    "Parsing issue with Nova 2...",
+    "\u2713 Parsed 5 reproduction steps",
+    "  Application: Smart Tasks",
+    "  Platform: web",
+    "  \ud83c\udf10 Application URL: http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login",
+    "Fetching JIRA issue: KAN-4",
+    "\u2713 Successfully fetched JIRA issue KAN-4",
+    "Parsing issue with Nova 2...",
+    "\u2713 Parsed 5 reproduction steps",
+    "  Application: Smart Tasks",
+    "  Platform: web",
+    "  \ud83c\udf10 Application URL: http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login",
+    "Creating detailed reproduction plan with Claude...",
+    "\u2713 Created reproduction plan with 5 steps",
+    "  Prerequisites: 2",
+    "  Expected outcome: The Total tasks should display the correct count of tasks...",
+    "\n=== Reproduction Plan ===",
+    "  Step 1: [NAVIGATE] Navigate to the application...",
+    "  Step 2: [FILL] Enter email address in the login form...",
+    "  Step 3: [FILL] Enter password in the login form...",
+    "  Step 4: [CLICK] Click on the 'Sign in' button...",
+    "  Step 5: [VERIFY] Verify the Total tasks in the dashboard...",
+    "Fetching JIRA issue: KAN-4",
+    "\u2713 Successfully fetched JIRA issue KAN-4",
+    "Parsing issue with Nova 2...",
+    "\u2713 Parsed 5 reproduction steps",
+    "  Application: Smart Tasks",
+    "  Platform: web",
+    "  \ud83c\udf10 Application URL: http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login",
+    "Fetching JIRA issue: KAN-4",
+    "\u2713 Successfully fetched JIRA issue KAN-4",
+    "Parsing issue with Nova 2...",
+    "\u2713 Parsed 5 reproduction steps",
+    "  Application: Smart Tasks",
+    "  Platform: web",
+    "  \ud83c\udf10 Application URL: http://smarttasks-env.eba-ep3hvh25.us-east-1.elasticbeanstalk.com/login",
+    "Creating detailed reproduction plan with Claude...",
+    "\u2713 Created reproduction plan with 5 steps",
+    "  Prerequisites: 2",
+    "  Expected outcome: The Total tasks should display the correct count of tasks...",
+    "\n=== Reproduction Plan ===",
+    "  Step 1: [NAVIGATE] Navigate to the application...",
+    "  Step 2: [FILL] Enter email address in the login form...",
+    "  Step 3: [FILL] Enter password in the login form...",
+    "  Step 4: [CLICK] Click on the 'Sign in' button...",
+    "  Step 5: [VERIFY] Verify the Total tasks in the dashboard...",
+    "\nExecuting reproduction plan (5 steps)...",
+    "\n============================================================",
+    "Executing 5 steps...",
+    "Mode: REAL BROWSER",
+    "============================================================",
+    "\n  Step 1: Navigate to the application...",
+    "    \u2717 FAILED: Failed due to automation error...",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "\n  Step 2: Enter email address in the login form...",
+    "    \u2717 FAILED: Failed due to automation error...",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "\n  Step 3: Enter password in the login form...",
+    "    \u2717 FAILED: Failed due to automation error...",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "\n  Step 4: Click on the 'Sign in' button...",
+    "    \u2717 FAILED: Failed due to automation error...",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "\n  Step 5: Verify the Total tasks in the dashboard...",
+    "    \u2717 FAILED: Failed due to automation error...",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "\nAnalyzing reproduction results...",
+    "\n============================================================",
+    "=== REPRODUCTION RESULT ===",
+    "============================================================",
+    "Bug Reproduced: NO \u2717",
+    "Confidence: 75%",
+    "\nRoot Cause Analysis:",
+    "  The bug was not successfully reproduced due to a consistent automation error across all steps. The error message 'Browser automation error: 'ReproductionStep' object has no attribute 'get'' suggests that there is an issue with the automation script, specifically with the methods used to interact with the browser elements. This error prevented the automation from completing any of the steps, including verifying the total tasks count.",
+    "\nRecommendations:",
+    "  1. Investigate and fix the automation script to ensure that the 'ReproductionStep' object has the necessary attributes and methods to interact with browser elements.",
+    "  2. Re-run the automation script after fixing the identified issues to verify if the bug can be successfully reproduced and to check if the total tasks count is displayed correctly.",
+    "\n============================================================",
+    "=== FINAL REPRODUCTION REPORT ===",
+    "============================================================",
+    "Issue: KAN-4",
+    "Bug Reproduced: NO",
+    "Confidence Score: 75%",
+    "Steps Executed: 5",
+    "",
+    "Root Cause Analysis:",
+    "The bug was not successfully reproduced due to a consistent automation error across all steps. The error message 'Browser automation error: 'ReproductionStep' object has no attribute 'get'' suggests that there is an issue with the automation script, specifically with the methods used to interact with the browser elements. This error prevented the automation from completing any of the steps, including verifying the total tasks count.",
+    "",
+    "Recommendations:",
+    "  1. Investigate and fix the automation script to ensure that the 'ReproductionStep' object has the necessary attributes and methods to interact with browser elements.",
+    "  2. Re-run the automation script after fixing the identified issues to verify if the bug can be successfully reproduced and to check if the total tasks count is displayed correctly.",
+    "",
+    "Detailed Steps:",
+    "  Step 1: [FAILED] Navigate to the application",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "  Step 2: [FAILED] Enter email address in the login form",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "  Step 3: [FAILED] Enter password in the login form",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "  Step 4: [FAILED] Click on the 'Sign in' button",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "  Step 5: [FAILED] Verify the Total tasks in the dashboard",
+    "    Error: Browser automation error: 'ReproductionStep' object has no attribute 'get'",
+    "============================================================"
+  ],
+  "errors": [],
+  "status": "completed",
+  "next_action": "report",
+  "code_files": {},
+  "github_commits": [],
+  "related_issues": []
+}

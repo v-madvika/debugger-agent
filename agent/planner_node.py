@@ -61,136 +61,160 @@ class ReproductionPlannerNode:
         
         credentials = issue_details.application_details.additional_info.get("credentials", {})
         
-        prompt = f"""You are an expert QA automation engineer creating an EXECUTABLE bug reproduction plan.
+        prompt = f"""You are an expert at creating detailed, executable browser automation plans for bug reproduction.
 
-**CRITICAL**: This plan will be executed by an automated browser agent. Each step MUST be precise and actionable.
+**CRITICAL INSTRUCTIONS:**
 
-## JIRA Issue: {issue_details.issue_key}
-**Summary**: {issue_details.summary}
-**Type**: {issue_details.issue_type}
-**Priority**: {issue_details.priority}
+You will receive bug reproduction steps from a JIRA ticket. Your job is to convert these high-level steps into detailed, executable automation steps with precise CSS selectors.
 
-### Bug Description:
-{issue_details.description}
+**FOR FORM FIELD IDENTIFICATION:**
 
-### Original Reproduction Steps from JIRA:
-{chr(10).join(f"{i+1}. {step}" for i, step in enumerate(issue_details.reproduction_steps))}
+When you encounter steps that involve filling form fields (login, registration, search, etc.), you MUST provide MULTIPLE selector strategies for each field to ensure the automation can find the element:
 
-### Expected vs Actual Behavior:
-- **Expected**: {issue_details.expected_behavior or "Not specified"}
-- **Actual (BUG)**: {issue_details.actual_behavior or "Not specified"}
+**Selector Priority Order:**
+1. ID selectors: #email, #username, #password
+2. Name attributes: input[name="email"], input[name="username"]
+3. Type + placeholder: input[type="email"][placeholder*="email" i]
+4. ARIA labels: input[aria-label*="email" i]
+5. Data attributes: input[data-testid="email"]
+6. Class patterns: .email-input, .login-email
+7. Generic fallbacks: input[type="text"]:visible, input[type="password"]
 
-### Application Information:
-- **URL**: {app_url} (WILL BE ACCESSED AUTOMATICALLY)
-- **Name**: {issue_details.application_details.name}
-- **Environment**: {issue_details.application_details.environment}
-- **Platform**: {issue_details.application_details.platform}
-{f"- **Login**: username={credentials.get('username', 'N/A')}, password={'***' if credentials.get('password') else 'N/A'}" if credentials else ""}
+**TEXT MATCHING RULES:**
+- Always use case-insensitive matching: [placeholder*="email" i]
+- Match partial text: "Email", "email", "E-mail", "Email Address", "Username"
+- For buttons: "Log in", "Login", "Sign in", "SIGN IN", "Submit"
+
+**EXAMPLE FORMAT** (adapt this pattern to the actual JIRA steps):
+
+For a login step from JIRA like "Enter credentials and login":
+{{
+    "step_number": 1,
+    "action": "fill",
+    "target": "email/username field",
+    "value": "{credentials.get('email', '') or credentials.get('username', '')}",
+    "description": "Enter email/username in login form",
+    "selectors": [
+        "#email", "#username", "#user", "#login-email",
+        "input[name='email']", "input[name='username']", "input[name='user']",
+        "input[type='email']",
+        "input[placeholder*='email' i]", "input[placeholder*='username' i]",
+        ".email-input", ".login-email",
+        "input[aria-label*='email' i]",
+        "input[data-testid='email']"
+    ],
+    "wait_condition": "input is visible and enabled",
+    "expected_result": "Email field is filled"
+}}
+
+**NOW CREATE THE ACTUAL PLAN:**
+
+**Issue Details:**
+- Issue Key: {issue_details.issue_key}
+- Summary: {issue_details.summary}
+- Application URL: {app_url}
+- Platform: {issue_details.application_details.platform}
+- Environment: {issue_details.application_details.environment}
+
+**Available Credentials:**
+{json.dumps(credentials, indent=2) if credentials else "No credentials provided"}
+
+**Reproduction Steps from JIRA Ticket:**
+{json.dumps(issue_details.reproduction_steps, indent=2)}
+
+**Expected Behavior:**
+{issue_details.expected_behavior}
+
+**Actual Behavior (The Bug):**
+{issue_details.actual_behavior}
 
 {code_context}
 
----
+**YOUR TASK:**
 
-Create an AUTOMATED reproduction plan with SPECIFIC, EXECUTABLE instructions:
+1. Convert each JIRA reproduction step into detailed automation steps
+2. If a step mentions "login" or "enter credentials", break it into:
+   - Fill email/username field (use credentials from above)
+   - Fill password field (use credentials from above)
+   - Click login button
+3. For each interactive element, provide 8-10 CSS selector variations
+4. Add wait conditions and validation for each step
+5. Include screenshots at key points for debugging
 
+**IMPORTANT RULES:**
+- Use the ACTUAL credentials provided above (email, username, password)
+- Use the ACTUAL steps from the JIRA ticket
+- DO NOT hardcode example values like "user@example.com" or "password123"
+- If credentials are missing, set value to "" and add a note in validation
+- Break down vague steps like "login" into specific fill and click actions
+- Always provide multiple selectors per field (at least 8-10)
+
+Return ONLY valid JSON (no markdown, no explanations):
 {{
-    "prerequisites": [
-        "Chrome/Firefox browser installed",
-        "Internet connection",
-        "Any other requirements"
-    ],
+    "plan_id": "{issue_details.issue_key}-plan",
+    "issue_key": "{issue_details.issue_key}",
+    "estimated_duration_seconds": 180,
+    "prerequisites": ["Browser must be installed", "Network access to {app_url}"],
     "environment_setup": {{
-        "required_tools": ["selenium", "playwright"],
-        "browser": "chrome",
-        "window_size": "1920x1080",
-        "timeout": 30
+        "application_url": "{app_url}",
+        "credentials": {json.dumps(credentials)}
     }},
     "reproduction_steps": [
         {{
             "step_number": 1,
-            "description": "Navigate to application homepage",
             "action": "navigate",
-            "target": "{app_url}",
-            "expected_result": "Page loads successfully"
+            "target": "application URL",
+            "value": "{app_url}",
+            "description": "Navigate to the application",
+            "selectors": [],
+            "wait_condition": "page is loaded",
+            "expected_result": "Application homepage is displayed",
+            "screenshot": true
         }},
-        {{
-            "step_number": 2,
-            "description": "Click on specific button/link",
-            "action": "click",
-            "target": "css:#button-id" or "xpath://button[@id='submit']" or "text:Button Text",
-            "expected_result": "Button is clicked and action triggered"
-        }},
-        {{
-            "step_number": 3,
-            "description": "Enter text in input field",
-            "action": "input",
-            "target": "css:#input-id or name:fieldName",
-            "expected_result": "Text is entered in field",
-            "data": "text to enter"
-        }},
-        {{
-            "step_number": 4,
-            "description": "Verify expected element appears",
-            "action": "verify",
-            "target": "css:.success-message",
-            "expected_result": "Success message is visible"
-        }}
+        // ... more steps based on JIRA reproduction steps
     ],
-    "expected_outcome": "Detailed description of what should happen when bug is reproduced"
+    "expected_outcome": "{issue_details.expected_behavior}",
+    "success_criteria": [
+        "All reproduction steps completed successfully",
+        "Bug behavior matches: {issue_details.actual_behavior[:100]}..."
+    ]
 }}
 
-**CRITICAL REQUIREMENTS**:
-
-1. **Action Types** (use these EXACT values):
-   - "navigate": Go to URL (target must be full URL)
-   - "click": Click element (target must be valid selector)
-   - "input": Type text (target = field selector, include "data" field)
-   - "select": Select dropdown option (target = selector, include "data" field with option)
-   - "wait": Wait for element (target = selector to wait for)
-   - "verify": Check if element exists/visible (target = selector to verify)
-   - "screenshot": Take screenshot at this point
-   - "execute_js": Run JavaScript (include "data" field with JS code)
-
-2. **Selector Formats** (target field):
-   - CSS: "css:#element-id" or "css:.class-name"
-   - XPath: "xpath://button[@id='submit']"
-   - Text: "text:Click Here"
-   - Name: "name:fieldName"
-   - ID: "id:element-id"
-
-3. **Step Structure**:
-   - Start with "navigate" to {app_url}
-   - Include login steps if credentials exist
-   - Follow JIRA reproduction steps exactly
-   - Add "verify" steps to check if bug occurred
-   - End with verification of the bug symptom
-
-4. **Be Specific**:
-   - Use actual element IDs, classes from the application
-   - Include specific data values to enter
-   - Add wait steps before verifying elements
-   - Include screenshot steps at critical points
-
-Respond ONLY with valid JSON, no additional text or markdown.
+Remember: Use ACTUAL values from the JIRA ticket, not examples!
 """
         
         try:
             if self.use_bedrock:
-                body = json_lib.dumps({
-                    "anthropic_version": "bedrock-2023-05-31",
-                    "max_tokens": 8192,
-                    "temperature": 0.3,
-                    "messages": [{"role": "user", "content": prompt}]
-                })
-                response = self.bedrock.invoke_model(modelId=self.model, body=body)
-                response_body = json_lib.loads(response['body'].read())
-                response_text = response_body['content'][0]['text']
+                # AWS Bedrock Converse API (for Nova 2)
+                print("\n📋 Creating reproduction plan with Nova 2...")
+                print(f"   Application URL: {app_url}")
+                print(f"   Credentials available: {bool(credentials)}")
+                print(f"   JIRA steps count: {len(issue_details.reproduction_steps)}")
+                
+                response = self.bedrock.converse(
+                    modelId=self.model,
+                    messages=[{
+                        "role": "user",
+                        "content": [{"text": prompt}]
+                    }],
+                    inferenceConfig={
+                        "maxTokens": 4096,
+                        "temperature": 0.0,
+                        "topP": 0.9
+                    }
+                )
+                response_text = response['output']['message']['content'][0]['text']
+                print(f"   ✓ Received plan from Nova 2 ({len(response_text)} chars)")
             else:
+                # Anthropic API
                 response = self.anthropic.messages.create(
                     model=self.model,
-                    max_tokens=8192,
-                    temperature=0.3,
-                    messages=[{"role": "user", "content": prompt}]
+                    max_tokens=4096,
+                    temperature=0,
+                    messages=[{
+                        "role": "user",
+                        "content": prompt
+                    }]
                 )
                 response_text = response.content[0].text
             
@@ -201,13 +225,17 @@ Respond ONLY with valid JSON, no additional text or markdown.
             
             parsed_plan = json.loads(response_text)
             
-            # Convert to ReproductionStep objects with validation
+            print(f"   ✓ Plan parsed successfully")
+            print(f"   Generated steps: {len(parsed_plan.get('reproduction_steps', []))}")
+            
+            # Convert to ReproductionStep objects
             repro_steps = []
             for step_data in parsed_plan.get("reproduction_steps", []):
                 # Validate required fields
                 if not step_data.get("action"):
                     raise Exception(f"Step {step_data.get('step_number')} missing action")
                 
+                # Create step with all fields
                 step = ReproductionStep(
                     step_number=step_data.get("step_number", len(repro_steps) + 1),
                     description=step_data.get("description", ""),
@@ -217,11 +245,22 @@ Respond ONLY with valid JSON, no additional text or markdown.
                     status="pending"
                 )
                 
-                # Store additional data in actual_result field temporarily
-                if step_data.get("data"):
-                    step.actual_result = f"DATA:{step_data['data']}"
+                # Store additional automation data (selectors, value, etc.)
+                step.actual_result = json.dumps({
+                    "selectors": step_data.get("selectors", []),
+                    "value": step_data.get("value", ""),
+                    "wait_condition": step_data.get("wait_condition", ""),
+                    "validation": step_data.get("validation", ""),
+                    "screenshot": step_data.get("screenshot", False)
+                })
                 
                 repro_steps.append(step)
+                
+                # Log important steps
+                if step.action == "fill":
+                    print(f"   Step {step.step_number}: Fill '{step.target}' with '{step_data.get('value', '')[:20]}...'")
+                elif step.action == "click":
+                    print(f"   Step {step.step_number}: Click '{step.target}'")
             
             if not repro_steps:
                 raise Exception("No reproduction steps were generated")
@@ -232,14 +271,17 @@ Respond ONLY with valid JSON, no additional text or markdown.
                 reproduction_steps=repro_steps,
                 prerequisites=parsed_plan.get("prerequisites", []),
                 environment_setup=parsed_plan.get("environment_setup", {}),
-                expected_outcome=parsed_plan.get("expected_outcome", "Bug should be reproduced")
+                expected_outcome=parsed_plan.get("expected_outcome", issue_details.expected_behavior)
             )
             
             return plan
             
         except json.JSONDecodeError as e:
+            print(f"   ✗ JSON parsing failed")
+            print(f"   Response: {response_text[:500]}")
             raise Exception(f"Failed to parse Claude response as JSON: {str(e)}\nResponse: {response_text}")
         except Exception as e:
+            print(f"   ✗ Plan creation failed: {str(e)}")
             raise Exception(f"Failed to create reproduction plan: {str(e)}")
     
     def validate_plan(self, plan: ReproductionPlan) -> List[str]:

@@ -10,10 +10,18 @@ from planner_node import ReproductionPlannerNode
 from execution_node import ExecutionNode
 from jira_client import SimpleJiraClient
 import os
+import logging
 from dotenv import load_dotenv
+from langchain_aws import ChatBedrock
+import boto3
+import json
+from bedrock_client import NovaBedrockClient
 
+# Load environment variables
 load_dotenv()
 
+# Configure logging
+logger = logging.getLogger(__name__)
 
 class BugReproductionAgent:
     """
@@ -34,6 +42,98 @@ class BugReproductionAgent:
             use_real_browser: If True, uses real browser automation (Playwright)
                             If False, uses AI simulation
         """
+        logger.info("="*70)
+        logger.info("Initializing BugReproductionAgent with AWS Bedrock")
+        logger.info("="*70)
+        
+        # Log environment configuration
+        model_id = os.getenv("BEDROCK_MODEL_ID", "us.amazon.nova-lite-v1:0")  # Updated default
+        region = os.getenv("AWS_REGION", "us-east-1")
+        max_tokens = int(os.getenv("MAX_TOKENS", 2048))
+        temperature = float(os.getenv("TEMPERATURE", 0.7))
+        
+        logger.info(f"Configuration:")
+        logger.info(f"  Model/Profile ID: {model_id}")
+        logger.info(f"  Region: {region}")
+        logger.info(f"  Max Tokens: {max_tokens}")
+        logger.info(f"  Temperature: {temperature}")
+        logger.info(f"  AWS Access Key: {os.getenv('AWS_ACCESS_KEY_ID', 'NOT SET')[:10]}...")
+        
+        # Verify AWS credentials
+        try:
+            sts_client = boto3.client('sts', region_name=region)
+            identity = sts_client.get_caller_identity()
+            logger.info(f"✓ AWS Identity verified:")
+            logger.info(f"    UserId: {identity['UserId']}")
+            logger.info(f"    Account: {identity['Account']}")
+            logger.info(f"    ARN: {identity['Arn']}")
+        except Exception as e:
+            logger.error(f"✗ AWS credentials verification failed: {str(e)}")
+            raise
+        
+        # Check if model is accessible
+        try:
+            bedrock_client = boto3.client('bedrock', region_name=region)
+            logger.info("Checking Bedrock model access...")
+            
+            # Try to get model details
+            try:
+                model_info = bedrock_client.get_foundation_model(modelIdentifier=model_id)
+                logger.info(f"✓ Model '{model_id}' is accessible")
+                logger.info(f"  Model details: {json.dumps(model_info.get('modelDetails', {}), indent=2, default=str)}")
+            except Exception as e:
+                logger.warning(f"Could not get model details: {str(e)}")
+                logger.warning("This might mean the model needs to be enabled in Bedrock console")
+        except Exception as e:
+            logger.warning(f"Could not access Bedrock client: {str(e)}")
+        
+        # Initialize ChatBedrock with inference profile
+        try:
+            logger.info("Initializing ChatBedrock client with inference profile...")
+            
+            # Amazon Nova 2 ONLY supports these parameters
+            model_kwargs = {
+                "max_new_tokens": max_tokens,
+                "temperature": temperature,
+                "top_p": 0.9
+            }
+            
+            logger.info(f"Model kwargs (Nova 2 compatible): {json.dumps(model_kwargs, indent=2)}")
+            
+            # Try using custom client first (more reliable for Nova 2)
+            try:
+                logger.info("Attempting to use custom NovaBedrockClient...")
+                self.llm = NovaBedrockClient(
+                    model_id=model_id,
+                    region_name=region,
+                    model_kwargs=model_kwargs
+                )
+                logger.info("✓ Using custom NovaBedrockClient")
+            except ImportError:
+                logger.info("Custom client not available, using ChatBedrock...")
+                self.llm = ChatBedrock(
+                    model_id=model_id,
+                    region_name=region,
+                    model_kwargs=model_kwargs,
+                    streaming=False
+                )
+                logger.info("✓ Using ChatBedrock")
+            
+            # Test invocation
+            logger.info("Testing model invocation...")
+            try:
+                test_response = self.llm.invoke("Reply with 'OK'")
+                logger.info(f"✓ Test successful: {test_response.content[:50]}")
+            except Exception as e:
+                logger.error(f"✗ Test failed: {str(e)}")
+                raise
+            
+        except Exception as e:
+            logger.error(f"✗ Failed to initialize: {str(e)}")
+            raise
+        
+        logger.info("="*70)
+        
         self.jira_client = SimpleJiraClient()
         self.use_real_browser = use_real_browser
         

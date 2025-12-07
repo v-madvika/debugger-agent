@@ -1,8 +1,8 @@
 """
 Agent State and Schema Definitions for Bug Reproduction Agent
 """
-from typing import TypedDict, List, Dict, Any, Optional, Annotated
-from pydantic import BaseModel, Field
+from typing import TypedDict, List, Dict, Any, Optional, Annotated, Union
+from pydantic import BaseModel, Field, field_validator
 import operator
 
 
@@ -29,19 +29,35 @@ class ApplicationDetails(BaseModel):
 
 
 class JiraIssueDetails(BaseModel):
-    """Parsed JIRA issue details"""
-    issue_key: str = Field(description="JIRA issue key (e.g., KAN-4)")
-    summary: str = Field(description="Issue summary/title")
-    description: Optional[str] = Field(default=None, description="Full issue description")
-    issue_type: str = Field(description="Issue type (Bug, Story, etc.)")
-    status: str = Field(description="Issue status")
-    priority: Optional[str] = Field(default=None, description="Issue priority")
+    """Structured JIRA issue details"""
+    issue_key: str
+    summary: str
+    description: Union[str, Dict[str, Any]] = ""  # Allow both string and ADF dict
+    issue_type: str = "Bug"
+    status: str = "Open"
+    priority: Optional[str] = None
     reproduction_steps: List[str] = Field(default_factory=list, description="Steps to reproduce")
     expected_behavior: Optional[str] = Field(default=None, description="Expected behavior")
     actual_behavior: Optional[str] = Field(default=None, description="Actual behavior")
     application_details: Optional[ApplicationDetails] = Field(default=None, description="Application details")
     attachments: List[str] = Field(default_factory=list, description="Attachment URLs")
     labels: List[str] = Field(default_factory=list, description="Issue labels")
+    
+    @field_validator('description')
+    @classmethod
+    def convert_description_to_string(cls, v):
+        """Convert ADF description to plain text if needed"""
+        if isinstance(v, dict):
+            # Simple ADF to text conversion
+            text_parts = []
+            if 'content' in v:
+                for block in v.get('content', []):
+                    if block.get('type') == 'paragraph':
+                        for item in block.get('content', []):
+                            if item.get('type') == 'text':
+                                text_parts.append(item.get('text', ''))
+            return ' '.join(text_parts)
+        return v if isinstance(v, str) else str(v)
 
 
 class ReproductionPlan(BaseModel):
