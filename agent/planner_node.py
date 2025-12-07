@@ -65,59 +65,118 @@ class ReproductionPlannerNode:
 
 **CRITICAL INSTRUCTIONS:**
 
-You will receive bug reproduction steps from a JIRA ticket. Your job is to convert these high-level steps into detailed, executable automation steps with precise CSS selectors.
+You will receive bug reproduction steps from a JIRA ticket. Convert these into precise, executable automation steps.
 
-**FOR FORM FIELD IDENTIFICATION:**
+**FOR LOGIN STEPS:**
+When a step mentions "login", "sign in", or "enter credentials", break it into detailed substeps:
+1. Fill email/username field (use actual credentials provided)
+2. Fill password field (use actual credentials provided)
+3. Click the login/submit button
+4. **ADD a wait step (3-5 seconds) to allow page navigation and data loading**
 
-When you encounter steps that involve filling form fields (login, registration, search, etc.), you MUST provide MULTIPLE selector strategies for each field to ensure the automation can find the element:
-
-**Selector Priority Order:**
-1. ID selectors: #email, #username, #password
-2. Name attributes: input[name="email"], input[name="username"]
-3. Type + placeholder: input[type="email"][placeholder*="email" i]
-4. ARIA labels: input[aria-label*="email" i]
-5. Data attributes: input[data-testid="email"]
-6. Class patterns: .email-input, .login-email
-7. Generic fallbacks: input[type="text"]:visible, input[type="password"]
-
-**TEXT MATCHING RULES:**
-- Always use case-insensitive matching: [placeholder*="email" i]
-- Match partial text: "Email", "email", "E-mail", "Email Address", "Username"
-- For buttons: "Log in", "Login", "Sign in", "SIGN IN", "Submit"
-
-**EXAMPLE FORMAT** (adapt this pattern to the actual JIRA steps):
-
-For a login step from JIRA like "Enter credentials and login":
+**EXAMPLE LOGIN SEQUENCE:**
 {{
-    "step_number": 1,
+    "step_number": 2,
     "action": "fill",
-    "target": "email/username field",
-    "value": "{credentials.get('email', '') or credentials.get('username', '')}",
-    "description": "Enter email/username in login form",
-    "selectors": [
-        "#email", "#username", "#user", "#login-email",
-        "input[name='email']", "input[name='username']", "input[name='user']",
-        "input[type='email']",
-        "input[placeholder*='email' i]", "input[placeholder*='username' i]",
-        ".email-input", ".login-email",
-        "input[aria-label*='email' i]",
-        "input[data-testid='email']"
-    ],
-    "wait_condition": "input is visible and enabled",
-    "expected_result": "Email field is filled"
+    "target": "Email Address field",
+    "value": "actual_email_from_credentials",
+    "description": "Enter email in login form",
+    "selectors": ["#email", "input[name='email']", "input[type='email']", ...],
+    "wait_condition": "input is visible and enabled"
+}},
+{{
+    "step_number": 3,
+    "action": "fill",
+    "target": "password field",
+    "value": "actual_password_from_credentials",
+    "description": "Enter password in login form",
+    "selectors": ["#password", "input[type='password']", ...],
+    "wait_condition": "input is visible and enabled"
+}},
+{{
+    "step_number": 4,
+    "action": "click",
+    "target": "login button",
+    "description": "Click login button",
+    "selectors": ["#login-btn", "button[type='submit']", ...],
+    "wait_condition": "button is enabled"
+}},
+{{
+    "step_number": 5,
+    "action": "wait",
+    "target": "page load",
+    "value": "3000",
+    "description": "Wait for page to load after login",
+    "wait_condition": "Navigation complete and page fully loaded"
 }}
 
-**NOW CREATE THE ACTUAL PLAN:**
+**FOR VERIFICATION STEPS:**
+When creating steps that verify content, state, or data (ANY kind of verification):
 
-**Issue Details:**
-- Issue Key: {issue_details.issue_key}
-- Summary: {issue_details.summary}
-- Application URL: {app_url}
+1. **Always add a wait step BEFORE verification** to ensure:
+   - AJAX/API calls have completed
+   - Dynamic content has loaded
+   - Animations have finished
+
+2. **Provide 10-15 selector strategies** including:
+   - CSS ID selectors: `#element-id`
+   - CSS class selectors: `.class-name`, `[class*='partial']`
+   - CSS attribute selectors: `[data-testid='value']`, `[aria-label='text']`
+   - XPath text search: `//span[contains(text(), 'keyword')]`
+   - XPath case-insensitive: `//div[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'keyword')]`
+   - Playwright text selectors: `text=/pattern/i`
+   - Relative XPath: `//h3[contains(text(), 'Label')]/following-sibling::span`
+   - Generic class patterns: `.stat`, `.metric`, `.count`, `.value`
+
+3. **Be specific about what to verify:**
+   - Text content match
+   - Numeric value comparison
+   - Element visibility
+   - Element state (enabled/disabled)
+   - Count of elements
+
+**GENERIC VERIFICATION EXAMPLE:**
+{{
+    "step_number": 7,
+    "action": "wait",
+    "target": "data loading",
+    "value": "2000",
+    "description": "Wait for dynamic content to load",
+    "wait_condition": "Page fully loaded with all data"
+}},
+{{
+    "step_number": 8,
+    "action": "verify",
+    "target": "{{describe what to verify based on JIRA step}}",
+    "description": "{{verification description from JIRA}}",
+    "selectors": [
+        "//span[contains(text(), '{{keyword from JIRA}}')]",
+        "//div[contains(@class, '{{relevant-class}}')]",
+        "#{{likely-id}}",
+        ".{{likely-class}}",
+        "[data-testid='{{relevant-testid}}']",
+        "text=/{{pattern from JIRA}}/i",
+        "//label[contains(text(), '{{label}}')]/following-sibling::*",
+        ".stat-value", ".metric", ".count", ".display-value",
+        "span", "div", "h1", "h2", "h3", "p"
+    ],
+    "value": "{{what value to check or extract}}",
+    "wait_condition": "Element is visible and contains expected data",
+    "validation": "{{how to validate - e.g., 'check if not zero', 'verify text matches', 'count should be > 0'}}",
+    "screenshot": true
+}}
+
+**TASK:**
+
+Create a detailed reproduction plan for this bug:
+
+Issue: {issue_details.issue_key}
+Summary: {issue_details.summary}
+
+Application Details:
+- URL: {issue_details.application_details.url}
 - Platform: {issue_details.application_details.platform}
-- Environment: {issue_details.application_details.environment}
-
-**Available Credentials:**
-{json.dumps(credentials, indent=2) if credentials else "No credentials provided"}
+- Credentials: {json.dumps(credentials, indent=2) if credentials else "No credentials provided"}
 
 **Reproduction Steps from JIRA Ticket:**
 {json.dumps(issue_details.reproduction_steps, indent=2)}
@@ -133,30 +192,20 @@ For a login step from JIRA like "Enter credentials and login":
 **YOUR TASK:**
 
 1. Convert each JIRA reproduction step into detailed automation steps
-2. If a step mentions "login" or "enter credentials", break it into:
-   - Fill email/username field (use credentials from above)
-   - Fill password field (use credentials from above)
-   - Click login button
-3. For each interactive element, provide 8-10 CSS selector variations
-4. Add wait conditions and validation for each step
-5. Include screenshots at key points for debugging
-
-**IMPORTANT RULES:**
-- Use the ACTUAL credentials provided above (email, username, password)
-- Use the ACTUAL steps from the JIRA ticket
-- DO NOT hardcode example values like "user@example.com" or "password123"
-- If credentials are missing, set value to "" and add a note in validation
-- Break down vague steps like "login" into specific fill and click actions
-- Always provide multiple selectors per field (at least 8-10)
+2. **For login steps**: Break into fill email → fill password → click button → WAIT for page load
+3. **For verification steps**: Add WAIT step before verification, then provide 10-15 selector variations
+4. **For navigation steps**: Add appropriate wait times for page loads
+5. Use the ACTUAL credentials, URLs, and field names from the JIRA ticket
+6. Add screenshots at critical points (after login, before/after key actions, at verification points)
 
 Return ONLY valid JSON (no markdown, no explanations):
 {{
     "plan_id": "{issue_details.issue_key}-plan",
     "issue_key": "{issue_details.issue_key}",
     "estimated_duration_seconds": 180,
-    "prerequisites": ["Browser must be installed", "Network access to {app_url}"],
+    "prerequisites": ["Browser must be installed", "Network access to {issue_details.application_details.url}"],
     "environment_setup": {{
-        "application_url": "{app_url}",
+        "application_url": "{issue_details.application_details.url}",
         "credentials": {json.dumps(credentials)}
     }},
     "reproduction_steps": [
@@ -164,23 +213,31 @@ Return ONLY valid JSON (no markdown, no explanations):
             "step_number": 1,
             "action": "navigate",
             "target": "application URL",
-            "value": "{app_url}",
+            "value": "{issue_details.application_details.url}",
             "description": "Navigate to the application",
             "selectors": [],
             "wait_condition": "page is loaded",
             "expected_result": "Application homepage is displayed",
             "screenshot": true
-        }},
+        }}
         // ... more steps based on JIRA reproduction steps
+        // CRITICAL: Break down login into: fill email, fill password, click, WAIT
+        // CRITICAL: Before ANY verification: add WAIT step, then provide 10-15 selectors
     ],
     "expected_outcome": "{issue_details.expected_behavior}",
     "success_criteria": [
         "All reproduction steps completed successfully",
-        "Bug behavior matches: {issue_details.actual_behavior[:100]}..."
+        "Bug behavior observed: {issue_details.actual_behavior[:100]}..."
     ]
 }}
 
-Remember: Use ACTUAL values from the JIRA ticket, not examples!
+**REMEMBER:**
+- Break login into 4 steps: fill email, fill password, click, WAIT
+- Add WAIT step before every verification
+- Provide 10-15 diverse selectors for verifications (CSS, XPath, text-based)
+- Use actual credentials from the environment_setup section
+- Be specific about what to verify based on the JIRA ticket description
+- DO NOT hardcode specific bug details - make it generic and adaptable
 """
         
         try:

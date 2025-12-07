@@ -44,7 +44,12 @@ class ExecutionNode:
             self.model = "claude-sonnet-4-20250514"
         
         self.use_real_browser = use_real_browser
+        # Set headless to False to see the browser window
         self.headless = os.getenv("HEADLESS_BROWSER", "false").lower() == "true"
+        
+        print(f"ExecutionNode initialized:")
+        print(f"  Use real browser: {self.use_real_browser}")
+        print(f"  Headless mode: {self.headless}")
     
     def execute_steps_with_browser(
         self,
@@ -62,6 +67,7 @@ class ExecutionNode:
         try:
             print(f"\n{'='*60}")
             print("  REAL BROWSER AUTOMATION - Executing on actual application")
+            print(f"  Headless mode: {self.headless}")
             print(f"{'='*60}")
             
             # Convert ReproductionStep objects to dict format for browser automation
@@ -103,24 +109,15 @@ class ExecutionNode:
                 
                 formatted_steps.append(step_dict)
             
-            # Use Playwright to execute steps - returns list of dicts
-            browser_results = run_browser_automation(formatted_steps, headless=self.headless)
+            # Use Playwright to execute steps - FORCE headless=False to see browser
+            print(f"\nCalling run_browser_automation with {len(formatted_steps)} steps...")
+            browser_results = run_browser_automation(formatted_steps, headless=False)  # FIX: Changed variable name
             
-            # Convert browser results (dicts) back to ReproductionStep objects
-            executed_steps = []
-            for i, (original_step, result_dict) in enumerate(zip(steps, browser_results)):
-                # Create a new ReproductionStep with updated status and results
-                executed_step = ReproductionStep(
-                    step_number=original_step.step_number,
-                    description=original_step.description,
-                    action=original_step.action,
-                    target=original_step.target,
-                    expected_result=original_step.expected_result,
-                    status=result_dict.get("status", "failed"),
-                    actual_result=result_dict.get("message", "") or result_dict.get("actual_result", ""),
-                    error=result_dict.get("error")
-                )
-                executed_steps.append(executed_step)
+            print(f"Received {len(browser_results)} results from browser automation")
+            
+            # browser_results is already a list of ReproductionStep objects
+            # No need to convert again - just return them
+            executed_steps = browser_results
             
             print(f"{'='*60}")
             print(f"  Executed {len(executed_steps)} steps")
@@ -710,8 +707,9 @@ Respond in JSON format:
             state["status"] = "failed"
             error_msg = f"Error in execution node: {str(e)}"
             errors.append(error_msg)
-            messages.append(f"✗ {error_msg}")
+            messages.append(f"✗ {error_msg}")            
             state["next_action"] = "abort"
+
         
         state["messages"] = messages
         state["errors"] = errors

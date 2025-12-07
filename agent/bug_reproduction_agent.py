@@ -140,6 +140,8 @@ class BugReproductionAgent:
         # Initialize nodes
         self.jira_parser = JiraParserNode()
         self.planner = ReproductionPlannerNode()
+        
+        # Pass headless=False to see the browser
         self.executor = ExecutionNode(use_real_browser=use_real_browser)
         
         # Build workflow
