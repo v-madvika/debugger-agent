@@ -118,22 +118,66 @@ When creating steps that verify content, state, or data (ANY kind of verificatio
    - Dynamic content has loaded
    - Animations have finished
 
-2. **Provide 10-15 selector strategies** including:
+2. **Provide 15-20 selector strategies** including:
+   - **PRIORITY 1: Find the NUMERIC VALUE container** (h1, h2, h3, span with numbers)
    - CSS ID selectors: `#element-id`
    - CSS class selectors: `.class-name`, `[class*='partial']`
    - CSS attribute selectors: `[data-testid='value']`, `[aria-label='text']`
-   - XPath text search: `//span[contains(text(), 'keyword')]`
-   - XPath case-insensitive: `//div[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'keyword')]`
-   - Playwright text selectors: `text=/pattern/i`
-   - Relative XPath: `//h3[contains(text(), 'Label')]/following-sibling::span`
-   - Generic class patterns: `.stat`, `.metric`, `.count`, `.value`
+   - XPath for headers containing numbers: `//h1[contains(text(), '0')]`, `//h2[number() >= 0]`
+   - XPath for spans with numbers: `//span[contains(text(), '0')]`, `//span[number()]`
+   - XPath relative to labels: `//label[contains(text(), 'Total')]/following-sibling::h2`
+   - XPath relative to context: `//h5[contains(., 'TaskName')]/ancestor::div[1]//h2[number()]`
+   - Generic numeric patterns: `.count`, `.metric`, `.stat-value`, `.display-number`
 
-3. **Be specific about what to verify:**
-   - Text content match
-   - Numeric value comparison
-   - Element visibility
-   - Element state (enabled/disabled)
-   - Count of elements
+3. **CRITICAL for count/numeric verifications**:
+   - The LABEL and the VALUE are often in SEPARATE elements
+   - Example HTML: `<div><p>Total Tasks</p><h2>3</h2></div>`
+   - Look for: `//p[contains(text(), 'Total')]/following-sibling::h2`
+   - Look for: `//div[.//p[contains(text(), 'Total')]]//h2`
+   - The NUMBER is what we need, not the label!
+
+**NUMERIC VERIFICATION EXAMPLE:**
+{{
+    "step_number": 7,
+    "action": "wait",
+    "target": "data loading",
+    "value": "2000",
+    "description": "Wait for dynamic content to load",
+    "wait_condition": "Page fully loaded with all data"
+}},
+{{
+    "step_number": 8,
+    "action": "verify",
+    "target": "total tasks count",
+    "description": "Verify the total tasks count is displayed",
+    "selectors": [
+        // PRIORITY 1: Find the NUMERIC VALUE directly
+        "//h2[contains(@class, 'stat')]", "//h2[contains(@class, 'count')]",
+        "//h1[number() >= 0]", "//h2[number() >= 0]", "//h3[number() >= 0]",
+        "//span[contains(@class, 'count')]", "//span[contains(@class, 'metric')]",
+        
+        // PRIORITY 2: Find value relative to label
+        "//p[contains(text(), 'Total Tasks')]/following-sibling::h2",
+        "//span[contains(text(), 'Total')]/following-sibling::h2",
+        "//label[contains(text(), 'Total')]/following-sibling::*[self::h1 or self::h2 or self::h3]",
+        
+        // PRIORITY 3: Find within container
+        "//div[.//p[contains(text(), 'Total Tasks')]]//h2",
+        "//div[.//span[contains(text(), 'Total')]]//h2",
+        
+        // PRIORITY 4: Context-specific (if task name provided)
+        "//h5[contains(., '{{task_name}}')]/ancestor::div[1]//h2[number()]",
+        "//h5[contains(., '{{task_name}}')]/ancestor::div[1]//span[contains(@class, 'count')]",
+        
+        // PRIORITY 5: Generic patterns
+        ".stat-value", ".metric-count", ".count", ".number", ".display-value",
+        "h2", "h1", "span", "div"
+    ],
+    "value": "Extract and verify the numeric count",
+    "wait_condition": "Numeric value is visible and loaded",
+    "validation": "Extract number and compare with expected behavior",
+    "screenshot": true
+}}
 
 **GENERIC VERIFICATION EXAMPLE:**
 {{
@@ -166,6 +210,96 @@ When creating steps that verify content, state, or data (ANY kind of verificatio
     "screenshot": true
 }}
 
+**FOR COMPLEX CLICK ACTIONS (buttons within specific contexts):**
+
+When you need to click an element that's inside a specific context (e.g., "click complete button for task 'X'"):
+
+**CRITICAL: The context text might be in headers (h1-h6), paragraphs, spans, or divs!**
+
+**CORRECT APPROACH - Find the header/text FIRST, then button:**
+{{
+    "step_number": 6,
+    "action": "click",
+    "target": "{{describe the button and context from JIRA}}",
+    "description": "{{description from JIRA step}}",
+    "selectors": [
+        // STRATEGY 1: Find header with context text, then button in same container
+        "//h1[contains(., '{{exact_context_text}}')]/ancestor::div[1]//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{{button_text_lowercase}}')]",
+        "//h2[contains(., '{{exact_context_text}}')]/ancestor::div[1]//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{{button_text_lowercase}}')]",
+        "//h3[contains(., '{{exact_context_text}}')]/ancestor::div[1]//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{{button_text_lowercase}}')]",
+        "//h4[contains(., '{{exact_context_text}}')]/ancestor::div[1]//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{{button_text_lowercase}}')]",
+        "//h5[contains(., '{{exact_context_text}}')]/ancestor::div[1]//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{{button_text_lowercase}}')]",
+        "//h6[contains(., '{{exact_context_text}}')]/ancestor::div[1]//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{{button_text_lowercase}}')]",
+        
+        // STRATEGY 2: Find header, go up to parent card/container, find any button
+        "//h5[contains(., '{{exact_context_text}}')]/ancestor::div[contains(@class, 'card')]//button",
+        "//h5[contains(., '{{exact_context_text}}')]/ancestor::div[contains(@class, 'row')]//button",
+        "//h5[contains(., '{{exact_context_text}}')]/ancestor::*[self::div or self::li or self::tr][1]//button",
+        
+        // STRATEGY 3: Traditional container-based search
+        "//div[contains(., '{{exact_context_text}}')]//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{{button_text_lowercase}}')]",
+        "//li[contains(., '{{exact_context_text}}')]//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{{button_text_lowercase}}')]",
+        "//tr[contains(., '{{exact_context_text}}')]//button",
+        
+        // STRATEGY 4: Case-insensitive header search
+        "//h5[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{{context_lowercase}}')]/ancestor::div[1]//button",
+        
+        // STRATEGY 5: CSS with Playwright (if headers support :has-text)
+        ".card:has-text('{{exact_context_text}}') button:has-text('{{button_text}}')",
+        ".task-item:has-text('{{exact_context_text}}') button:has-text('{{button_text}}')",
+        
+        // STRATEGY 6: Data attributes
+        "[data-task-name='{{exact_context_text}}'] button",
+        "[data-item-name='{{exact_context_text}}'] button",
+        
+        // STRATEGY 7: Generic button search (LAST RESORT)
+        "button:has-text('{{button_text}}')",
+        "button[type='button']", "button"
+    ],
+    "wait_condition": "Button is visible and enabled"
+}}
+
+**EXAMPLE - HTML Structure:**
+```html
+<div class="card">
+    <h5>{{Task Name Here}}</h5>
+    <button class="complete-btn">{{Button Text}}</button>
+</div>
+```
+
+**CORRECT selectors (in priority order):**
+Replace `{{exact_context_text}}` with the ACTUAL task name from JIRA, and `{{button_text}}` with the ACTUAL button text:
+
+1. `"//h5[contains(., '{{exact_context_text}}')]/ancestor::div[1]//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{{button_text_lowercase}}')]"` ← BEST
+2. `"//h5[contains(., '{{exact_context_text}}')]/ancestor::div[contains(@class, 'card')]//button"` ← Find card container
+3. `".card:has-text('{{exact_context_text}}') button:has-text('{{button_text}}')"` ← CSS approach
+4. `"//div[contains(., '{{exact_context_text}}')]//button[contains(., '{{button_text}}')]"` ← Traditional
+5. `"button:has-text('{{button_text}}')"` ← LAST RESORT (will click first matching button!)
+
+**KEY XPATH CONCEPTS:**
+- `//h5[contains(., 'text')]` = Find h5 tag containing this text (any text from JIRA)
+- `/ancestor::div[1]` = Navigate UP to the first parent div element
+- `/ancestor::div[contains(@class, 'card')]` = Navigate UP to div with class 'card'
+- `//button` = Then find any button descendant within that container
+- `[contains(translate(text(), 'ABC...', 'abc...'), 'lowercase')]` = Case-insensitive button text match
+
+**IMPORTANT RULES:**
+1. **Check ALL header levels**: h1, h2, h3, h4, h5, h6 - use the appropriate one based on page structure
+2. **Use ancestor:: to go UP**: Navigate from the identifying element (header/text) to its parent container
+3. **Look for common classes**: 'card', 'task', 'item', 'row', 'list-item', 'col', 'container'
+4. **Case-insensitive matching**: Always use translate() in XPath for robustness across different text cases
+5. **Extract exact text from JIRA**: Use the PRECISE text from the JIRA description (preserve quotes, spacing, capitalization)
+6. **Replace placeholders**: 
+   - `{{exact_context_text}}` → actual identifier text from JIRA (e.g., task name, item title, card header)
+   - `{{context_lowercase}}` → lowercase version for case-insensitive matching
+   - `{{button_text}}` → actual button text from JIRA (e.g., "Complete", "Delete", "Edit")
+   - `{{button_text_lowercase}}` → lowercase version (e.g., "complete", "delete", "edit")
+
+**COMMON PATTERNS TO RECOGNIZE:**
+- "click complete button for task 'ABC'" → context='ABC', button='complete'
+- "delete item named 'XYZ'" → context='XYZ', button='delete'
+- "edit the 'My Project' entry" → context='My Project', button='edit'
+
 **TASK:**
 
 Create a detailed reproduction plan for this bug:
@@ -193,10 +327,11 @@ Application Details:
 
 1. Convert each JIRA reproduction step into detailed automation steps
 2. **For login steps**: Break into fill email → fill password → click button → WAIT for page load
-3. **For verification steps**: Add WAIT step before verification, then provide 10-15 selector variations
-4. **For navigation steps**: Add appropriate wait times for page loads
-5. Use the ACTUAL credentials, URLs, and field names from the JIRA ticket
-6. Add screenshots at critical points (after login, before/after key actions, at verification points)
+3. **For click actions with context**: Provide 12-15 DIVERSE selectors (CSS, XPath, text, attributes, generic)
+4. **For verification steps**: Add WAIT step before verification, then provide 10-15 selector variations
+5. **For navigation steps**: Add appropriate wait times for page loads
+6. Use the ACTUAL credentials, URLs, and field names from the JIRA ticket
+7. Add screenshots at critical points (after login, before/after key actions, at verification points)
 
 Return ONLY valid JSON (no markdown, no explanations):
 {{

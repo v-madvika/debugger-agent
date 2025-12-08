@@ -237,6 +237,12 @@ Be realistic in your simulation. If this step would likely trigger the bug based
         """
         Analyze all executed steps to determine if bug was reproduced
         and provide root cause analysis
+        
+        CONFIDENCE SCORE is calculated based on:
+        1. Quality of data extraction (did we get numeric values?)
+        2. Clarity of comparison (does observed match bug description?)
+        3. Number of successful vs failed steps
+        4. Completeness of verification
         """
         
         steps_summary = []
@@ -251,6 +257,23 @@ Be realistic in your simulation. If this step would likely trigger the bug based
                 "error": step.error
             })
         
+        # Extract verification results with better parsing
+        print(f"\n   📊 Parsing Verification Results:")
+        for step in executed_steps:
+            if step.action == "verify" and step.status == "success":
+                # Try to extract numeric value from actual_result
+                value_match = re.search(r'\(Value:\s*(\d+)\)', step.actual_result)
+                if value_match:
+                    observed_value = value_match.group(1)
+                    print(f"      Step {step.step_number}: Observed numeric value = {observed_value}")
+                else:
+                    # Try to find any number in the text
+                    numbers = re.findall(r'\b\d+\b', step.actual_result)
+                    if numbers:
+                        print(f"      Step {step.step_number}: Found numbers in text: {numbers}")
+                    else:
+                        print(f"      Step {step.step_number}: ⚠ No numeric value found in: {step.actual_result[:100]}")
+        
         prompt = f"""You are analyzing the results of a bug reproduction attempt.
 
 **Issue**: {plan.issue_key}
@@ -261,456 +284,78 @@ Be realistic in your simulation. If this step would likely trigger the bug based
 
 **Original Bug Description**:
 - Expected Behavior: {context.get('expected_behavior', 'Not specified')}
-- Actual Behavior: {context.get('actual_behavior', 'Not specified')}
+- Actual Behavior (The Bug): {context.get('actual_behavior', 'Not specified')}
 
-Analyze the execution results and provide:
+**UNIVERSAL ANALYSIS RULES (Apply to ALL bugs):**
 
-1. **Bug Reproduced**: Did we successfully reproduce the bug?
-2. **Root Cause Analysis**: What is likely causing this bug?
-3. **Recommendations**: What steps should be taken to fix it?
-4. **Confidence Score**: How confident are you in this analysis? (0.0 to 1.0)
+1. **Understanding "actual_result" field**:
+   - Each verification step's "actual_result" contains what was observed
+   - Look for patterns like "(Value: X)" which indicate extracted numeric/text values
+   - Format: "Element found. Content: [text] (Value: [extracted_value])"
 
-Respond in JSON format:
-{{
-    "bug_reproduced": true|false,
-    "root_cause_analysis": "Detailed analysis of what's causing the bug",
-    "recommendations": [
-        "Recommendation 1",
-        "Recommendation 2"
-    ],
-    "confidence_score": 0.85,
-    "summary": "Brief summary of findings"
-}}
-"""
-        
-        try:
-            if self.use_bedrock:
-                # Use Converse API for Nova 2 (not the old invoke_model with max_tokens)
-                response = self.bedrock.converse(
-                    modelId=self.model,
-                    messages=[{
-                        "role": "user",
-                        "content": [{"text": prompt}]
-                    }],
-                    inferenceConfig={
-                        "maxTokens": 4096,
-                        "temperature": 0.3,
-                        "topP": 0.9
-                    }
-                )
-                response_text = response['output']['message']['content'][0]['text']
-            else:
-                response = self.anthropic.messages.create(
-                    model=self.model,
-                    max_tokens=4096,
-                    temperature=0.3,
-                    messages=[{"role": "user", "content": prompt}]
-                )
-                response_text = response.content[0].text
-            
-            # Extract JSON
-            json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', response_text, re.DOTALL)
-            if json_match:
-                response_text = json_match.group(1)
-            
-            analysis = json.loads(response_text)
-            
-            # Create ReproductionResult
-            result = ReproductionResult(
-                issue_key=plan.issue_key,
-                bug_reproduced=analysis.get("bug_reproduced", False),
-                executed_steps=executed_steps,
-                screenshots=[],  # Would be populated in real implementation
-                logs=[f"{datetime.now().isoformat()}: Reproduction attempt completed"],
-                root_cause_analysis=analysis.get("root_cause_analysis"),
-                recommendations=analysis.get("recommendations", []),
-                confidence_score=analysis.get("confidence_score", 0.5)
-            )
-            
-            return result
-            
-        except Exception as e:
-            # Create fallback result
-            failed_steps = [s for s in executed_steps if s.status == "failed"]
-            bug_reproduced = len(failed_steps) > 0
-            
-            result = ReproductionResult(
-                issue_key=plan.issue_key,
-                bug_reproduced=bug_reproduced,
-                executed_steps=executed_steps,
-                screenshots=[],
-                logs=[
-                    f"{datetime.now().isoformat()}: Reproduction attempt completed",
-                    f"Analysis error: {str(e)}"
-                ],
-                root_cause_analysis=f"Could not perform detailed analysis. {len(failed_steps)} steps failed.",
-                recommendations=[
-                    "Manual investigation required",
-                    "Review failed steps for patterns"
-                ],
-                confidence_score=0.3
-            )
-            
-            return result
-    
-    def analyze_execution_with_claude(self, execution_results: List[Dict]) -> Dict:
-        """Analyze execution results with Claude"""
-        
-        # Prepare prompt for analysis
-        prompt = f"""You are analyzing the results of a bug reproduction attempt.
+2. **For NUMERIC/COUNT verifications** (totals, counts, quantities):
+   - Example patterns: "(Value: 3)", "(Value: 0)", "(Value: 15)"
+   - The number in "(Value: X)" is the OBSERVED state
+   - Compare this number with what the bug description says
 
-**Executed Steps Results**:
-{json.dumps(execution_results, indent=2)}
+3. **For TEXT/STATE verifications** (messages, labels, status):
+   - Look for the actual text content in "actual_result"
+   - Example: "Content: Error message displayed"
+   - Compare this text with what the bug describes
 
-Provide a summary of the execution, including:
+4. **Determining if bug was REPRODUCED**:
+   - Bug IS reproduced: Observed behavior matches the BUGGY behavior described in JIRA
+   - Bug NOT reproduced: Observed behavior matches the EXPECTED/CORRECT behavior
+   
+   Examples:
+   - JIRA says "count shows 0 when should show actual count" + observed "(Value: 0)" → Bug reproduced ✓
+   - JIRA says "count shows 0" + observed "(Value: 5)" → Bug NOT reproduced ✗ (working correctly)
+   - JIRA says "error message appears" + observed "Error displayed" → Bug reproduced ✓
+   - JIRA says "login fails" + observed "Login successful" → Bug NOT reproduced ✗
 
-- Were there any errors? (yes/no)
-- If errors occurred, list the steps that failed and the error messages.
-- Based on the execution, do you think the bug was reproduced? (yes/no)
-- Any other relevant observations.
+5. **If verification incomplete** (no value extracted):
+   - Example: "Found element with text: Total Tasks" (no Value: X)
+   - This means the LABEL was found but NOT the actual value
+   - Report as incomplete, confidence LOW (< 0.3)
+   - Cannot determine bug status without actual value
 
-Respond in JSON format:
-{{
-    "errors_occurred": true|false,
-    "failed_steps": [
-        {{
-            "step": 1,
-            "error": "Error message here"
-        }}
-    ],
-    "bug_reproduced": true|false,
-    "observations": "Any other relevant observations"
-}}
-"""
-        
-        try:
-            if self.use_bedrock:
-                # AWS Bedrock Converse API (for Nova 2)
-                response = self.bedrock.converse(
-                    modelId=self.model,
-                    messages=[{
-                        "role": "user",
-                        "content": [{"text": prompt}]
-                    }],
-                    inferenceConfig={
-                        "maxTokens": 2048,
-                        "temperature": 0.0,
-                        "topP": 0.9
-                    }
-                )
-                response_text = response['output']['message']['content'][0]['text']
-            else:
-                # Anthropic API
-                response = self.anthropic.messages.create(
-                    model=self.model,
-                    max_tokens=2048,
-                    temperature=0,
-                    messages=[{
-                        "role": "user",
-                        "content": prompt
-                    }]
-                )
-                response_text = response.content[0].text
-            
-            # Extract JSON
-            json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', response_text, re.DOTALL)
-            if json_match:
-                response_text = json_match.group(1)
-            
-            analysis = json.loads(response_text)
-            
-            return analysis
-        
-        except Exception as e:
-            return {
-                "errors_occurred": True,
-                "failed_steps": [],
-                "bug_reproduced": False,
-                "observations": f"Error during analysis: {str(e)}"
-            }
-    
-    async def _execute_fill_action(self, page, step: Dict) -> Dict[str, Any]:
-        """Execute fill action with multiple selector attempts"""
-        
-        print(f"    Executing FILL action: {step['description']}")
-        
-        target = step.get('target', '')
-        value = step.get('value', '')
-        selectors = step.get('selectors', [])
-        
-        if not selectors:
-            # Generate fallback selectors based on target description
-            selectors = self._generate_fallback_selectors(target)
-        
-        print(f"    Target: {target}")
-        print(f"    Value: {value[:20]}..." if len(value) > 20 else f"    Value: {value}")
-        print(f"    Trying {len(selectors)} selector(s)...")
-        
-        last_error = None
-        
-        for i, selector in enumerate(selectors, 1):
-            try:
-                print(f"      [{i}/{len(selectors)}] Trying selector: {selector}")
-                
-                # Wait for element with timeout
-                await page.wait_for_selector(selector, timeout=5000, state='visible')
-                
-                # Clear existing value first
-                await page.fill(selector, '')
-                await page.wait_for_timeout(200)
-                
-                # Fill with new value
-                await page.fill(selector, value)
-                await page.wait_for_timeout(300)
-                
-                # Verify the value was entered
-                entered_value = await page.input_value(selector)
-                
-                if entered_value == value:
-                    print(f"      ✓ Successfully filled field with selector: {selector}")
-                    return {
-                        "status": "success",
-                        "selector_used": selector,
-                        "message": f"Filled '{target}' with value"
-                    }
-                else:
-                    print(f"      ⚠ Value mismatch. Expected: {value}, Got: {entered_value}")
-                    last_error = f"Value verification failed for {selector}"
-                    
-            except Exception as e:
-                print(f"      ✗ Selector failed: {str(e)[:100]}")
-                last_error = str(e)
-                continue
-        
-        # All selectors failed
-        error_msg = f"Failed to fill '{target}' after trying {len(selectors)} selectors. Last error: {last_error}"
-        print(f"    ✗ {error_msg}")
-        
-        # Take screenshot for debugging
-        screenshot_path = f"failed_fill_{step.get('step_number', 'unknown')}.png"
-        await page.screenshot(path=screenshot_path)
-        print(f"    📸 Debug screenshot saved: {screenshot_path}")
-        
-        return {
-            "status": "failed",
-            "error": error_msg,
-            "selectors_tried": selectors,
-            "screenshot": screenshot_path
-        }
-    
-    def _generate_fallback_selectors(self, target_description: str) -> List[str]:
-        """Generate fallback selectors based on target description"""
-        
-        selectors = []
-        target_lower = target_description.lower()
-        
-        # Email field patterns
-        if 'email' in target_lower or 'username' in target_lower:
-            selectors.extend([
-                "#email", "#username", "#user", "#login-email",
-                "input[name='email']", "input[name='username']", "input[name='user']",
-                "input[type='email']",
-                "input[placeholder*='email' i]", "input[placeholder*='username' i]",
-                ".email-input", ".username-input", ".login-email",
-                "input[aria-label*='email' i]", "input[aria-label*='username' i]",
-                "input[data-testid='email']", "input[data-testid='username']",
-                "input[autocomplete='email']", "input[autocomplete='username']"
-            ])
-        
-        # Password field patterns
-        elif 'password' in target_lower or 'pass' in target_lower:
-            selectors.extend([
-                "#password", "#passwd", "#pass", "#user-password", "#login-password",
-                "input[name='password']", "input[name='passwd']", "input[name='pass']",
-                "input[type='password']",
-                "input[placeholder*='password' i]",
-                ".password-input", ".login-password",
-                "input[aria-label*='password' i]",
-                "input[data-testid='password']",
-                "input[autocomplete='current-password']"
-            ])
-        
-        # Button patterns
-        elif 'button' in target_lower or 'submit' in target_lower or 'login' in target_lower or 'sign in' in target_lower:
-            selectors.extend([
-                "button[type='submit']",
-                "button:has-text('Log in')", "button:has-text('Login')", "button:has-text('Sign in')",
-                "button:has-text('LOG IN')", "button:has-text('SIGN IN')",
-                "input[type='submit']",
-                "#login-button", "#submit", "#signin",
-                ".login-button", ".btn-login", ".submit-button",
-                "button[name='login']", "button[name='submit']",
-                "a:has-text('Log in')", "a:has-text('Sign in')"
-            ])
-        
-        # Generic input patterns
-        else:
-            selectors.extend([
-                "input[type='text']",
-                "input:visible",
-                ".form-control",
-                "[data-testid]",
-                "input"
-            ])
-        
-        return selectors
-    
-    async def _execute_click_action(self, page, step: Dict) -> Dict[str, Any]:
-        """Execute click action with multiple selector attempts"""
-        
-        print(f"    Executing CLICK action: {step['description']}")
-        
-        target = step.get('target', '')
-        selectors = step.get('selectors', [])
-        
-        if not selectors:
-            selectors = self._generate_fallback_selectors(target)
-        
-        print(f"    Target: {target}")
-        print(f"    Trying {len(selectors)} selector(s)...")
-        
-        last_error = None
-        
-        for i, selector in enumerate(selectors, 1):
-            try:
-                print(f"      [{i}/{len(selectors)}] Trying selector: {selector}")
-                
-                # Wait for element
-                await page.wait_for_selector(selector, timeout=5000, state='visible')
-                
-                # Click the element
-                await page.click(selector)
-                await page.wait_for_timeout(500)
-                
-                print(f"      ✓ Successfully clicked: {selector}")
-                return {
-                    "status": "success",
-                    "selector_used": selector,
-                    "message": f"Clicked '{target}'"
-                }
-                
-            except Exception as e:
-                print(f"      ✗ Selector failed: {str(e)[:100]}")
-                last_error = str(e)
-                continue
-        
-        error_msg = f"Failed to click '{target}' after trying {len(selectors)} selectors"
-        print(f"    ✗ {error_msg}")
-        
-        return {
-            "status": "failed",
-            "error": error_msg,
-            "selectors_tried": selectors
-        }
-    
-    def __call__(self, state: AgentState) -> AgentState:
-        """Execute the reproduction and verification node"""
-        
-        messages = state.get("messages", [])
-        errors = state.get("errors", [])
-        
-        try:
-            # Get reproduction plan
-            plan_dict = state.get("reproduction_plan")
-            if not plan_dict:
-                raise Exception("No reproduction plan found in state")
-            
-            plan = ReproductionPlan(**plan_dict)
-            
-            # Update status
-            state["status"] = "executing"
-            messages.append(f"\nExecuting reproduction plan ({len(plan.reproduction_steps)} steps)...")
-            
-            # Prepare context
-            parsed_issue = state.get("parsed_issue", {})
-            context = {
-                "issue_key": plan.issue_key,
-                "application_name": parsed_issue.get("application_details", {}).get("name"),
-                "application_url": parsed_issue.get("application_details", {}).get("url"),
-                "environment": parsed_issue.get("application_details", {}).get("environment"),
-                "platform": parsed_issue.get("application_details", {}).get("platform"),
-                "expected_behavior": parsed_issue.get("expected_behavior"),
-                "actual_behavior": parsed_issue.get("actual_behavior"),
-                "previous_results": []
-            }
-            
-            # Execute steps
-            messages.append(f"\n{'='*60}")
-            messages.append(f"Executing {len(plan.reproduction_steps)} steps...")
-            messages.append(f"Mode: {'REAL BROWSER' if self.use_real_browser else 'SIMULATION'}")
-            messages.append(f"{'='*60}")
-            
-            if self.use_real_browser:
-                # Execute with real browser automation
-                executed_steps = self.execute_steps_with_browser(plan.reproduction_steps)
-                
-                # Log results
-                for executed_step in executed_steps:
-                    status_icon = "✓" if executed_step.status == "success" else "✗"
-                    messages.append(f"\n  Step {executed_step.step_number}: {executed_step.description[:60]}...")
-                    messages.append(f"    {status_icon} {executed_step.status.upper()}: {executed_step.actual_result[:80]}...")
-                    
-                    if executed_step.error:
-                        messages.append(f"    Error: {executed_step.error}")
-                    
-                    state["current_step"] = executed_step.step_number
-            else:
-                # Fallback to simulation
-                messages.append("⚠ Using simulation mode (set use_real_browser=True for actual execution)")
-                executed_steps = []
-                for i, step in enumerate(plan.reproduction_steps):
-                    messages.append(f"\n  Simulating Step {step.step_number}: {step.description[:60]}...")
-                    
-                    executed_step = self.simulate_step_execution(step, context)
-                    executed_steps.append(executed_step)
-                    
-                    # Update context with result
-                    context["previous_results"].append({
-                        "step": executed_step.step_number,
-                        "status": executed_step.status,
-                        "result": executed_step.actual_result
-                    })
-                    
-                    # Log result
-                    status_icon = "✓" if executed_step.status == "success" else "✗"
-                    messages.append(f"    {status_icon} {executed_step.status.upper()}: {executed_step.actual_result[:80]}...")
-                    
-                    if executed_step.error:
-                        messages.append(f"    Error: {executed_step.error}")
-                    
-                    state["current_step"] = i + 1
-            
-            # Analyze results
-            messages.append("\nAnalyzing reproduction results...")
-            state["status"] = "analyzing"
-            
-            result = self.analyze_reproduction_results(plan, executed_steps, context)
-            state["reproduction_result"] = result.model_dump()
-            
-            # Log analysis
-            messages.append(f"\n{'='*60}")
-            messages.append("=== REPRODUCTION RESULT ===")
-            messages.append(f"{'='*60}")
-            messages.append(f"Bug Reproduced: {'YES ✓' if result.bug_reproduced else 'NO ✗'}")
-            messages.append(f"Confidence: {result.confidence_score:.0%}")
-            messages.append(f"\nRoot Cause Analysis:")
-            messages.append(f"  {result.root_cause_analysis}")
-            messages.append(f"\nRecommendations:")
-            for i, rec in enumerate(result.recommendations, 1):
-                messages.append(f"  {i}. {rec}")
-            
-            # Set status
-            state["status"] = "completed"
-            state["next_action"] = "report"
-            
-        except Exception as e:
-            state["status"] = "failed"
-            error_msg = f"Error in execution node: {str(e)}"
-            errors.append(error_msg)
-            messages.append(f"✗ {error_msg}")            
-            state["next_action"] = "abort"
+6. **Confidence scoring**:
+   - 0.8-1.0: Clear numeric/text value extracted, definitive match or mismatch with bug
+   - 0.5-0.7: Values extracted but comparison ambiguous
+   - 0.2-0.4: Only labels found, no actual values extracted
+   - 0.0-0.1: Steps failed, no data to analyze
 
-        
-        state["messages"] = messages
-        state["errors"] = errors
-        return state
+**YOUR TASK:**
+Analyze the executed steps and determine:
+1. Did we observe the BUGGY behavior described in JIRA? (bug_reproduced: true/false)
+2. What caused the bug? (if reproduced) OR Why is system working correctly? (if not reproduced)
+3. What should be done next?
+4. **How confident are you in this assessment?**
+
+**CONFIDENCE SCORE CALCULATION:**
+
+Assign confidence based on:
+
+**0.9-1.0** - Very High Confidence:
+- Numeric value extracted clearly (e.g., "(Value: 3)")
+- Definitive match or mismatch with bug description
+- All critical verification steps succeeded
+- No ambiguity in interpretation
+
+**0.7-0.8** - High Confidence:
+- Values extracted successfully
+- Clear comparison possible
+- Minor ambiguities but overall clear
+
+**0.5-0.6** - Medium Confidence:
+- Values extracted but comparison somewhat unclear
+- Some steps failed but key verifications passed
+- Results are mostly interpretable
+
+**0.3-0.4** - Low Confidence:
+- Only labels found, no actual values
+- Example: "Found element with text: Total Tasks" (no number)
+- Cannot make definitive determination
+
+**0.1-0.2** - Very Low Confidence:
+- Multiple critical steps failed
