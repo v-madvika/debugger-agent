@@ -125,17 +125,33 @@ async def execute_step(page, step: Dict, step_number: int) -> Dict:
             
             # After click, wait for any navigation or AJAX
             print(f"    Waiting for page to stabilize after click...")
-            await page.wait_for_timeout(500)
+            
+            # Detect if this is a state-changing action (needs longer wait)
+            is_state_changing = any(word in target.lower() for word in 
+                ['complete', 'submit', 'delete', 'update', 'save', 'create', 'add', 'remove'])
+            
+            # Detect if this is a tab/navigation click
+            is_tab_click = 'tab' in target.lower() or 'nav' in target.lower()
+            
+            if is_state_changing:
+                print(f"    ⚡ State-changing action detected - waiting for server response")
+                await page.wait_for_timeout(2000)  # Give server time to process
+            elif is_tab_click:
+                print(f"    ⚡ Tab navigation detected - waiting for content")
+                await page.wait_for_timeout(1000)  # Give tab content time to load
+            else:
+                await page.wait_for_timeout(500)  # Standard wait
             
             try:
                 # Wait for network idle or load state
                 await page.wait_for_load_state("networkidle", timeout=5000)
                 print(f"    ✓ Page stabilized")
             except:
-                # If networkidle times out, just wait a bit more
-                await page.wait_for_timeout(1500)
-                print(f"    ⊙ Timeout waiting for network idle, continuing...")
-            
+                # If networkidle times out, wait a bit more
+                additional_wait = 2000 if is_state_changing else 1000
+                await page.wait_for_timeout(additional_wait)
+                print(f"    ⊙ Timeout waiting for network idle, waited {additional_wait}ms")
+        
         elif action == "wait":
             # Wait for condition
             wait_time = int(value) if value and str(value).isdigit() else 2000
@@ -157,6 +173,11 @@ async def execute_step(page, step: Dict, step_number: int) -> Dict:
         elif action == "verify":
             # Verify element or condition
             print(f"    Verifying: {target}")
+            
+            # Add extra wait before verification to ensure data is loaded
+            print(f"    ⚡ Pre-verification wait - ensuring data is loaded")
+            await page.wait_for_timeout(1500)
+            
             result = await execute_verify_action(page, selectors, target, step_number)
             
         elif action == "screenshot":
@@ -270,14 +291,22 @@ async def execute_click_action(page, selectors: List[str], target: str, step_num
     print(f"    Attempting to click: {target}")
     print(f"    Strategy: Try context-specific selectors first, generic last")
     
+    # Special handling for tab/navigation clicks - add extra wait
+    is_tab_click = 'tab' in target.lower() or 'nav' in target.lower()
+    if is_tab_click:
+        print(f"    ⚡ Tab/navigation click detected - adding extra wait time")
+        await page.wait_for_timeout(1000)  # Extra wait for tabs to be ready
+    
     last_error = None
     
     for i, selector in enumerate(selectors, 1):
         try:
             print(f"      [{i}/{len(selectors)}] Trying: {selector}")
             
-            # Reduced timeout
-            await page.wait_for_selector(selector, timeout=3000, state='visible')
+            # For tabs, use longer timeout
+            timeout = 5000 if is_tab_click else 3000
+            
+            await page.wait_for_selector(selector, timeout=timeout, state='visible')
             
             # Get all matching elements
             elements = await page.query_selector_all(selector)
@@ -290,9 +319,7 @@ async def execute_click_action(page, selectors: List[str], target: str, step_num
             
             # If multiple elements match, we need to be more careful
             if len(elements) > 1:
-                # For context-specific selectors (XPath with contains context), first match is usually correct
-                # For generic selectors, we have a problem
-                is_generic = selector in ["button", ".btn", ".button", "button[type='button']", "button[type='submit']"]
+                is_generic = selector in ["button", ".btn", ".button", "button[type='button']", "button[type='submit']", "a"]
                 
                 if is_generic:
                     print(f"      ⚠ Warning: Generic selector matched {len(elements)} elements - may click wrong one!")
@@ -317,7 +344,13 @@ async def execute_click_action(page, selectors: List[str], target: str, step_num
             
             # Click element
             await element.click()
-            await page.wait_for_timeout(300)
+            
+            # For tabs, wait longer for content to load
+            if is_tab_click:
+                print(f"      Waiting for tab content to load...")
+                await page.wait_for_timeout(1500)  # Extra wait for tab content
+            else:
+                await page.wait_for_timeout(300)
             
             print(f"      ✓ Success with: {selector}")
             return {
@@ -328,6 +361,7 @@ async def execute_click_action(page, selectors: List[str], target: str, step_num
             
         except Exception as e:
             last_error = str(e)[:100]
+            print(f"      ✗ Selector failed: {last_error}")
             continue
     
     # All selectors failed - provide helpful debugging info
@@ -338,7 +372,7 @@ async def execute_click_action(page, selectors: List[str], target: str, step_num
     # Take debug screenshot and try to find similar elements
     try:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        screenshot_path
+        screenshot_path = f"screenshots/click_failed_step_{step_number}_{timestamp}.png"  # FIX: Complete the line
         await page.screenshot(path=screenshot_path, full_page=True)
         print(f"    📸 Debug screenshot: {screenshot_path}")
         
@@ -377,31 +411,153 @@ async def execute_verify_action(page, selectors: List[str], target: str, step_nu
     if not selectors:
         selectors = generate_fallback_selectors(target)
     
-    # Extract context from target if present (e.g., "total tasks for 'The Idea Jar'")
+    # Extract context from target if present
     import re
     context_match = re.search(r"['\"]([^'\"]*)['\"]", target)
     context_text = context_match.group(1) if context_match else None
     
+    # Extract location/tab information if present
+    location_match = re.search(r"in (?:the )?(\w+) (tab|section|area)", target.lower())
+    expected_location = location_match.group(1) if location_match else None
+    
     if context_text:
-        print(f"      🎯 Context-specific verification: Looking for '{target}' in context of '{context_text}'")
+        print(f"      🎯 Context-specific verification: Looking for '{context_text}' in target '{target}'")
+    if expected_location:
+        print(f"      📍 Expected location: '{expected_location}' tab/section")
     
     last_error = None
+    found_elements = []
     
-    # Try CSS/XPath selectors first
+    # If we have BOTH context and location, we need strict validation
+    if context_text and expected_location:
+        print(f"      ⚠ STRICT MODE: Must find '{context_text}' specifically in '{expected_location}' location")
+        
+        # Strategy: Search ONLY in the specified tab/section
+        # First, verify we're on the correct tab
+        try:
+            # Check if the tab is active
+            active_tab_selectors = [
+                f"a.nav-link.active:has-text('{expected_location.title()}')",
+                f"//a[contains(@class, 'nav-link') and contains(@class, 'active')][contains(., '{expected_location.title()}')]",
+                f"[role='tab'][aria-selected='true']:has-text('{expected_location.title()}')"
+            ]
+            
+            tab_verified = False
+            for tab_sel in active_tab_selectors:
+                try:
+                    tab_elem = await page.query_selector(tab_sel)
+                    if tab_elem and await tab_elem.is_visible():
+                        print(f"      ✓ Confirmed on '{expected_location}' tab")
+                        tab_verified = True
+                        break
+                except:
+                    continue
+            
+            if not tab_verified:
+                print(f"      ⚠ Warning: Could not confirm '{expected_location}' tab is active")
+        except Exception as e:
+            print(f"      ⚠ Tab verification failed: {str(e)}")
+        
+        # Now search for the context text ONLY in visible tab content
+        context_found = False
+        context_patterns = [
+            # Search in active tab pane
+            f"//div[contains(@class, 'tab-pane') and contains(@class, 'active')]//h5[contains(., '{context_text}')]",
+            f"//div[contains(@class, 'tab-pane') and contains(@class, 'active')]//*[contains(., '{context_text}')]",
+            f"//div[@role='tabpanel' and not(contains(@style, 'display: none'))]//h5[contains(., '{context_text}')]",
+            f"//div[@role='tabpanel' and not(contains(@style, 'display: none'))]//*[contains(., '{context_text}')]",
+            # Generic visible containers
+            f"//h5[contains(., '{context_text}') and not(ancestor::*[contains(@style, 'display: none')])]",
+            f"//*[contains(., '{context_text}') and not(ancestor::*[contains(@style, 'display: none')])]",
+        ]
+        
+        for pattern in context_patterns[:4]:  # Try first 4 (most specific)
+            try:
+                elements = await page.query_selector_all(f"xpath={pattern}")
+                for elem in elements:
+                    if not await elem.is_visible():
+                        continue
+                    
+                    elem_text = await elem.text_content()
+                    if elem_text and context_text in elem_text:
+                        # Double-check it's not from the wrong tab by checking ancestors
+                        is_in_wrong_tab = await page.evaluate(
+                            """(el) => {
+                                const tabPane = el.closest('.tab-pane');
+                                if (tabPane && tabPane.classList.contains('active')) return false;
+                                if (tabPane && !tabPane.classList.contains('active')) return true;
+                                return false;
+                            }""",
+                            elem
+                        )
+                        
+                        if is_in_wrong_tab:
+                            print(f"      ⊘ Found '{context_text}' but in INACTIVE tab - MISMATCH")
+                            continue
+                        
+                        print(f"      ✓ Found '{context_text}' in active '{expected_location}' content")
+                        context_found = True
+                        
+                        return {
+                            "status": "success",
+                            "message": f"Verified: Found '{context_text}' in '{expected_location}' tab: {elem_text.strip()[:100]}",
+                            "selector_used": pattern,
+                            "text_content": elem_text.strip(),
+                            "context": context_text,
+                            "location": expected_location,
+                            "location_verified": True
+                        }
+            except Exception as e:
+                print(f"      Pattern failed: {str(e)[:50]}")
+                continue
+        
+        # If we reach here, context was NOT found in the expected location
+        if not context_found:
+            # Check if it exists in other tabs (wrong location)
+            print(f"      ⊗ Checking if '{context_text}' exists in OTHER locations...")
+            
+            all_matches = await page.query_selector_all(f"//h5[contains(., '{context_text}')] | //*[contains(text(), '{context_text}')]")
+            other_location_count = 0
+            
+            for match in all_matches[:5]:
+                if await match.is_visible():
+                    other_location_count += 1
+                    match_text = await match.text_content()
+                    print(f"        - Found in different location: {match_text.strip()[:50]}")
+            
+            # Return failure with location mismatch
+            return {
+                "status": "failed",
+                "message": f"LOCATION MISMATCH: '{context_text}' NOT found in '{expected_location}' tab " +
+                         (f"(found in {other_location_count} other location(s))" if other_location_count > 0 else "(not found anywhere)"),
+                "selector_used": "location_validation",
+                "text_content": f"Expected in '{expected_location}' but not present",
+                "context": context_text,
+                "location": expected_location,
+                "location_verified": False,
+                "location_mismatch": True
+            }
+    
+    # Original strategies for non-location-specific verification
+    # Strategy 1: Try provided selectors first
     for i, selector in enumerate(selectors, 1):
         try:
             print(f"      [{i}/{len(selectors)}] Verifying: {selector}")
             
-            # Wait for element with reduced timeout
             element = await page.wait_for_selector(selector, timeout=2000)
             
             if element:
                 is_visible = await element.is_visible()
                 if is_visible:
-                    # Get text content
                     text_content = await element.text_content()
                     if text_content:
                         text_content = text_content.strip()
+                        
+                        # If we have context, validate it's in the text
+                        if context_text and context_text not in text_content:
+                            print(f"      ⊘ Found element but doesn't contain '{context_text}'")
+                            continue
+                        
                         print(f"      ✓ Element visible with text: '{text_content}'")
                         
                         # Extract numeric value if present
@@ -432,89 +588,103 @@ async def execute_verify_action(page, selectors: List[str], target: str, step_nu
             last_error = str(e)[:100]
             continue
     
-    # Strategy 2: Context-specific verification (if context is provided)
+    # Strategy 2: Context-specific verification with location validation
     if context_text:
         print(f"      Trying context-specific verification for '{context_text}'...")
         
-        # Find the container with the context, then look for the target within it
+        # Find all elements containing the context text
         context_patterns = [
-            # Find header with context, then search within that container
-            f"//h5[contains(., '{context_text}')]/ancestor::div[1]//*[contains(@class, 'count')]",
-            f"//h5[contains(., '{context_text}')]/ancestor::div[1]//*[contains(@class, 'stat')]",
-            f"//h5[contains(., '{context_text}')]/ancestor::div[1]//*[contains(@class, 'metric')]",
-            f"//h5[contains(., '{context_text}')]/ancestor::div[1]//span",
-            f"//h4[contains(., '{context_text}')]/ancestor::div[1]//span",
-            # Card-based search
-            f"//div[contains(@class, 'card')][.//h5[contains(., '{context_text}')]]//*[contains(@class, 'count')]",
-            f"//div[contains(@class, 'card')][.//h5[contains(., '{context_text}')]]//span",
-            # List item based
-            f"//li[contains(., '{context_text}')]//*[contains(@class, 'count')]",
-            f"//li[contains(., '{context_text}')]//span",
+            # Header-based search
+            f"//h5[contains(., '{context_text}')]/ancestor::div[1]",
+            f"//h4[contains(., '{context_text}')]/ancestor::div[1]",
+            f"//h3[contains(., '{context_text}')]/ancestor::div[1]",
+            # Card/container search
+            f"//div[contains(@class, 'card')][.//*[contains(., '{context_text}')]]",
+            f"//div[contains(@class, 'task')][.//*[contains(., '{context_text}')]]",
+            f"//li[contains(., '{context_text}')]",
+            f"//tr[contains(., '{context_text}')]",
         ]
         
         for pattern in context_patterns:
             try:
-                elements = await page.query_selector_all(f"xpath={pattern}")
-                for elem in elements:
-                    if await elem.is_visible():
-                        text = await elem.text_content()
-                        if text and text.strip():
-                            text = text.strip()
-                            # Extract numbers
-                            numbers = re.findall(r'\d+', text)
-                            numeric_value = int(numbers[0]) if numbers else None
-                            
-                            print(f"      ✓ Found in context '{context_text}': '{text}'")
-                            return {
-                                "status": "success",
-                                "message": f"Found '{target}' in context of '{context_text}': {text}" +
-                                         (f" (Value: {numeric_value})" if numeric_value is not None else ""),
-                                "selector_used": pattern,
-                                "text_content": text,
-                                "numeric_value": numeric_value,
-                                "context": context_text
-                            }
+                containers = await page.query_selector_all(f"xpath={pattern}")
+                for container in containers:
+                    if not await container.is_visible():
+                        continue
+                    
+                    # Get all text within this container
+                    container_text = await container.text_content()
+                    if not container_text or context_text not in container_text:
+                        continue
+                    
+                    # If location is specified, validate it
+                    if expected_location:
+                        container_text_lower = container_text.lower()
+                        # Check if the expected location is mentioned in or near this container
+                        if expected_location not in container_text_lower:
+                            # Check parent elements for tab/section indicators
+                            parent_text = await page.evaluate(
+                                "(el) => el.closest('[role=\"tabpanel\"], .tab-pane, .section')?.textContent || ''",
+                                container
+                            )
+                            if expected_location not in parent_text.lower():
+                                print(f"      ⊘ Found '{context_text}' but not in '{expected_location}' location")
+                                continue
+                    
+                    # Found the right container, extract relevant data
+                    print(f"      ✓ Found container with context '{context_text}'")
+                    
+                    # Try to find numeric values or specific elements within
+                    inner_elements = await container.query_selector_all("span, h1, h2, div, p")
+                    for elem in inner_elements:
+                        if await elem.is_visible():
+                            elem_text = await elem.text_content()
+                            if elem_text:
+                                elem_text = elem_text.strip()
+                                # Extract numbers
+                                numbers = re.findall(r'\d+', elem_text)
+                                numeric_value = int(numbers[0]) if numbers else None
+                                
+                                # Check if this element has meaningful content
+                                if numeric_value is not None or len(elem_text) > 0:
+                                    location_info = f" in '{expected_location}'" if expected_location else ""
+                                    
+                                    return {
+                                        "status": "success",
+                                        "message": f"Found '{target}' in context of '{context_text}'{location_info}: {elem_text}" +
+                                                 (f" (Value: {numeric_value})" if numeric_value is not None else ""),
+                                        "selector_used": pattern,
+                                        "text_content": elem_text,
+                                        "numeric_value": numeric_value,
+                                        "context": context_text,
+                                        "location": expected_location
+                                    }
             except:
                 continue
     
-    # Strategy 3: XPath text search
-    print(f"      Trying XPath text-based search...")
-    xpath_patterns = [
-        f"//*[contains(text(), '{target}')]",
-        f"//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{target.lower()}')]",
-        "//span[contains(@class, 'count')]",
-        "//div[contains(@class, 'metric')]",
-        "//span[contains(@class, 'stat')]"
-    ]
+    # Strategy 3: If we found elements but they didn't match context/location, report that
+    if found_elements:
+        print(f"      ⚠ Found {len(found_elements)} element(s) but none matched context/location requirements")
+        # Return the first found element with a note about location
+        elem = found_elements[0]
+        location_note = f" (Expected in '{expected_location}' but found elsewhere)" if expected_location else ""
+        
+        return {
+            "status": "success",
+            "message": f"Found element but location mismatch{location_note}. Content: {elem['text']}" +
+                     (f" (Value: {elem['numeric_value']})" if elem['numeric_value'] is not None else ""),
+            "selector_used": elem['selector'],
+            "text_content": elem['text'],
+            "numeric_value": elem['numeric_value'],
+            "location_mismatch": True if expected_location else False
+        }
     
-    for xpath in xpath_patterns:
-        try:
-            element = await page.wait_for_selector(f"xpath={xpath}", timeout=1000)
-            if element and await element.is_visible():
-                text = await element.text_content()
-                if text:
-                    print(f"      ✓ Found via XPath: '{text.strip()}'")
-                    
-                    # Extract numbers
-                    numbers = re.findall(r'\d+', text)
-                    numeric_value = int(numbers[0]) if numbers else None
-                    
-                    return {
-                        "status": "success",
-                        "message": f"Found element with text: {text.strip()}",
-                        "selector_used": xpath,
-                        "text_content": text.strip(),
-                        "numeric_value": numeric_value
-                    }
-        except:
-            continue
-    
-    # Strategy 4: Text content search in common elements
+    # Strategy 4: General text search (fallback)
     print(f"      Trying comprehensive text search...")
     search_keywords = target.lower().replace("'", "").replace('"', '').split()
     text_elements = await page.query_selector_all("span, div, h1, h2, h3, h4, h5, p, td, li")
     
-    for elem in text_elements[:50]:  # Check first 50 elements
+    for elem in text_elements[:50]:
         try:
             if not await elem.is_visible():
                 continue
@@ -529,7 +699,7 @@ async def execute_verify_action(page, selectors: List[str], target: str, step_nu
             if any(keyword in text_lower for keyword in search_keywords):
                 print(f"      ✓ Found matching element: '{text.strip()}'")
                 
-                # Try to extract numeric value
+                # Extract numeric value
                 numbers = re.findall(r'\d+', text)
                 numeric_value = int(numbers[0]) if numbers else None
                 
@@ -557,7 +727,6 @@ async def execute_verify_action(page, selectors: List[str], target: str, step_nu
         target_clean = target.lower().replace("'", "").replace('"', '')
         if any(word in body_text.lower() for word in target_clean.split()):
             print(f"      ⚠ Target text '{target}' found in page but element not located")
-            # Extract surrounding context
             idx = body_text.lower().find(target_clean.split()[0])
             if idx >= 0:
                 context = body_text[max(0, idx-50):min(len(body_text), idx+100)]
@@ -572,7 +741,7 @@ async def execute_verify_action(page, selectors: List[str], target: str, step_nu
         print(f"      ⚠ Debug capture failed: {str(e)}")
     
     # All attempts failed
-    raise Exception(f"Verification of '{target}' failed after trying {len(selectors)} selectors and text search. Last error: {last_error}")
+    raise Exception(f"Verification of '{target}' failed after trying {len(selectors)} selectors. Last error: {last_error}")
 
 
 def generate_fallback_selectors(target: str) -> List[str]:
@@ -603,6 +772,62 @@ def generate_fallback_selectors(target: str) -> List[str]:
             ".password-input", ".login-password",
             "input[aria-label*='password' i]",
             "input[data-testid='password']"
+        ])
+    
+    # Tab/Navigation patterns (NEW - handle tab clicks)
+    elif 'tab' in target_lower or 'nav' in target_lower:
+        # Extract the tab name from quotes or after "tab"
+        import re
+        tab_match = re.search(r"['\"]([^'\"]*)['\"]", target)
+        tab_name = tab_match.group(1) if tab_match else None
+        
+        # If no quotes, try to extract word before/after "tab"
+        if not tab_name:
+            # Pattern: "click on the Completed tab" -> "Completed"
+            words = [w for w in target.split() if w.lower() not in ['click', 'on', 'the', 'tab', 'button']]
+            tab_name = words[0] if words else "tab"
+        
+        print(f"      🎯 Tab/Navigation detected: '{tab_name}'")
+        
+        selectors.extend([
+            # PRIORITY 1: Direct nav-link with contains text (works with icons)
+            f"a.nav-link:has-text('{tab_name}')",
+            f"//a[contains(@class, 'nav-link')][contains(., '{tab_name}')]",
+            f"//a[contains(@class, 'nav-link')][contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{tab_name.lower()}')]",
+            
+            # PRIORITY 2: Nav-item containing the link
+            f".nav-item a:has-text('{tab_name}')",
+            f"//li[contains(@class, 'nav-item')]//a[contains(., '{tab_name}')]",
+            
+            # PRIORITY 3: Links with href filter parameter
+            f"a[href*='{tab_name.lower()}']",
+            f"a[href*='filter={tab_name.lower()}']",
+            f"//a[contains(@href, '{tab_name.lower()}')]",
+            f"//a[contains(@href, 'filter={tab_name.lower()}')]",
+            
+            # PRIORITY 4: Tab role selectors (if using ARIA)
+            f"a[role='tab']:has-text('{tab_name}')",
+            f"button[role='tab']:has-text('{tab_name}')",
+            f"//a[@role='tab'][contains(., '{tab_name}')]",
+            
+            # PRIORITY 5: Nav link with partial class match
+            f"[class*='nav-link']:has-text('{tab_name}')",
+            f"[class*='nav']:has-text('{tab_name}')",
+            
+            # PRIORITY 6: Tab class patterns
+            f".tab:has-text('{tab_name}')",
+            f".tab-button:has-text('{tab_name}')",
+            
+            # PRIORITY 7: Generic text-based (case-insensitive)
+            f"a:has-text('{tab_name}')",
+            f"button:has-text('{tab_name}')",
+            f"//a[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{tab_name.lower()}')]",
+            
+            # PRIORITY 8: Generic clickable elements with nav classes
+            ".nav-link", ".nav-item a",
+            "[role='tab']",
+            ".tab", ".tab-button",
+            "a", "button"
         ])
     
     # Button/Submit patterns with context-aware matching

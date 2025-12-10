@@ -283,56 +283,62 @@ Be realistic in your simulation. If this step would likely trigger the bug based
 **UNIVERSAL ANALYSIS RULES (Apply to ALL bugs):**
 
 1. **Understanding "actual_result" field**:
-   - Each verification step's "actual_result" contains what was observed
-   - Look for patterns like "(Value: X)" which indicate extracted numeric/text values
-   - Format: "Element found. Content: [text] (Value: [extracted_value])"
+   - Each step's "actual_result" contains what was observed
+   - Look for patterns like "(Value: X)" for numeric values
+   - Look for "LOCATION MISMATCH" or "location_verified: false" for incorrect placement
+   - Format: "Element found. Content: [text] (Value: [value])"
 
-2. **For NUMERIC/COUNT verifications** (totals, counts, quantities):
-   - Example patterns: "(Value: 3)", "(Value: 0)", "(Value: 15)"
-   - The number in "(Value: X)" is the OBSERVED state
-   - Compare this number with what the bug description says
+2. **For LOCATION-BASED verifications** (e.g., "verify X in Y tab"):
+   - Check for "location_verified: true/false" in the result
+   - "LOCATION MISMATCH" means element found in WRONG location
+   - Example: Task found in "All" tab but should be in "Completed" tab → Bug reproduced ✓
+   - Example: Element "NOT found in expected tab" → Bug reproduced ✓
 
-3. **For TEXT/STATE verifications** (messages, labels, status):
-   - Look for the actual text content in "actual_result"
-   - Example: "Content: Error message displayed"
-   - Compare this text with what the bug describes
+3. **For NUMERIC/COUNT verifications**:
+   - Look for "(Value: X)" which indicates extracted numeric values
+   - Compare observed value with buggy behavior described in JIRA
 
-4. **Determining if bug was REPRODUCED**:
-   - Bug IS reproduced: Observed behavior matches the BUGGY behavior described in JIRA
-   - Bug NOT reproduced: Observed behavior matches the EXPECTED/CORRECT behavior
+4. **For TEXT/STATE verifications**:
+   - Look for actual text content in "actual_result"
+   - Compare with bug description
+
+5. **Determining if bug was REPRODUCED**:
+   - Bug IS reproduced: Observed behavior matches BUGGY behavior in JIRA
+     * Wrong location: "LOCATION MISMATCH" → Bug reproduced ✓
+     * Wrong value: Matches buggy value → Bug reproduced ✓
+     * Missing element: "NOT found" when should exist → Bug reproduced ✓
    
-   Examples:
-   - JIRA says "count shows 0 when should show actual count" + observed "(Value: 0)" → Bug reproduced ✓
-   - JIRA says "count shows 0" + observed "(Value: 5)" → Bug NOT reproduced ✗ (working correctly)
-   - JIRA says "error message appears" + observed "Error displayed" → Bug reproduced ✓
-   - JIRA says "login fails" + observed "Login successful" → Bug NOT reproduced ✗
+   - Bug NOT reproduced: Observed behavior matches EXPECTED/CORRECT behavior
+     * Correct location: "location_verified: true" → Bug NOT reproduced ✗
+     * Correct value: Matches expected value → Bug NOT reproduced ✗
+     * Element present: Found when expected → Bug NOT reproduced ✗
 
-5. **If verification incomplete** (no value extracted):
-   - Example: "Found element with text: Total Tasks" (no Value: X)
-   - This means the LABEL was found but NOT the actual value
-   - Report as incomplete, confidence LOW (< 0.3)
-   - Cannot determine bug status without actual value
+6. **Examples**:
+   - JIRA: "Task not appearing in Completed tab" + "LOCATION MISMATCH" → Bug reproduced ✓
+   - JIRA: "Count shows 0" + "(Value: 0)" → Bug reproduced ✓
+   - JIRA: "Error message missing" + "Element not found" → Bug reproduced ✓
+   - JIRA: "Login fails" + "Login successful" → Bug NOT reproduced ✗
 
-6. **Confidence scoring**:
-   - 0.8-1.0: Clear numeric/text value extracted, definitive match or mismatch with bug
-   - 0.5-0.7: Values extracted but comparison ambiguous
-   - 0.2-0.4: Only labels found, no actual values extracted
-   - 0.0-0.1: Steps failed, no data to analyze
+7. **Confidence scoring**:
+   - 0.8-1.0: Clear evidence (location verified, values extracted)
+   - 0.5-0.7: Partial evidence (some ambiguity)
+   - 0.2-0.4: Weak evidence (labels only, no validation)
+   - 0.0-0.1: Steps failed, no data
 
 **YOUR TASK:**
-Analyze the executed steps and determine:
-1. Did we observe the BUGGY behavior described in JIRA? (bug_reproduced: true/false)
-2. What caused the bug? (if reproduced) OR Why is system working correctly? (if not reproduced)
+Analyze and determine:
+1. Did we observe the BUGGY behavior from JIRA? (bug_reproduced: true/false)
+2. What caused the bug? (if reproduced) OR Why is system working? (if not reproduced)
 3. What should be done next?
-4. How confident are you in this assessment?
+4. Confidence level?
 
 Respond in JSON format:
 {{
     "bug_reproduced": true|false,
-    "root_cause_analysis": "Detailed analysis based on observed vs expected behavior",
+    "root_cause_analysis": "Detailed analysis based on observed vs expected behavior and location validation",
     "recommendations": ["Recommendation 1", "Recommendation 2"],
     "confidence_score": 0.85,
-    "summary": "Concise summary of findings"
+    "summary": "Concise summary with specific evidence"
 }}
 """
         

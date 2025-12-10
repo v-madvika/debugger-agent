@@ -210,95 +210,159 @@ When creating steps that verify content, state, or data (ANY kind of verificatio
     "screenshot": true
 }}
 
-**FOR COMPLEX CLICK ACTIONS (buttons within specific contexts):**
+**FOR CLICK ACTIONS (especially state-changing actions):**
 
-When you need to click an element that's inside a specific context (e.g., "click complete button for task 'X'"):
+When clicking buttons that CHANGE DATA (like "Complete", "Delete", "Submit", "Update", "Save"):
+1. **ALWAYS add explicit WAIT step AFTER the click** (2-3 seconds minimum)
+2. This allows the server to process the request
+3. This allows the UI to update/refresh
+4. This is CRITICAL before navigating to other tabs or pages
 
-**CRITICAL: The context text might be in headers (h1-h6), paragraphs, spans, or divs!**
-
-**CORRECT APPROACH - Find the header/text FIRST, then button:**
+**GENERIC EXAMPLE - State-changing action pattern:**
 {{
-    "step_number": 6,
+    "step_number": N,
     "action": "click",
-    "target": "{{describe the button and context from JIRA}}",
-    "description": "{{description from JIRA step}}",
+    "target": "{{action_verb}} button for {{item_type}} '{{item_identifier}}'",
+    "description": "Click {{action_verb}} button to {{perform_action}}",
     "selectors": [
-        // STRATEGY 1: Find header with context text, then button in same container
-        "//h1[contains(., '{{exact_context_text}}')]/ancestor::div[1]//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{{button_text_lowercase}}')]",
-        "//h2[contains(., '{{exact_context_text}}')]/ancestor::div[1]//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{{button_text_lowercase}}')]",
-        "//h3[contains(., '{{exact_context_text}}')]/ancestor::div[1]//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{{button_text_lowercase}}')]",
-        "//h4[contains(., '{{exact_context_text}}')]/ancestor::div[1]//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{{button_text_lowercase}}')]",
-        "//h5[contains(., '{{exact_context_text}}')]/ancestor::div[1]//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{{button_text_lowercase}}')]",
-        "//h6[contains(., '{{exact_context_text}}')]/ancestor::div[1]//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{{button_text_lowercase}}')]",
-        
-        // STRATEGY 2: Find header, go up to parent card/container, find any button
-        "//h5[contains(., '{{exact_context_text}}')]/ancestor::div[contains(@class, 'card')]//button",
-        "//h5[contains(., '{{exact_context_text}}')]/ancestor::div[contains(@class, 'row')]//button",
-        "//h5[contains(., '{{exact_context_text}}')]/ancestor::*[self::div or self::li or self::tr][1]//button",
-        
-        // STRATEGY 3: Traditional container-based search
-        "//div[contains(., '{{exact_context_text}}')]//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{{button_text_lowercase}}')]",
-        "//li[contains(., '{{exact_context_text}}')]//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{{button_text_lowercase}}')]",
-        "//tr[contains(., '{{exact_context_text}}')]//button",
-        
-        // STRATEGY 4: Case-insensitive header search
-        "//h5[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{{context_lowercase}}')]/ancestor::div[1]//button",
-        
-        // STRATEGY 5: CSS with Playwright (if headers support :has-text)
-        ".card:has-text('{{exact_context_text}}') button:has-text('{{button_text}}')",
-        ".task-item:has-text('{{exact_context_text}}') button:has-text('{{button_text}}')",
-        
-        // STRATEGY 6: Data attributes
-        "[data-task-name='{{exact_context_text}}'] button",
-        "[data-item-name='{{exact_context_text}}'] button",
-        
-        // STRATEGY 7: Generic button search (LAST RESORT)
-        "button:has-text('{{button_text}}')",
-        "button[type='button']", "button"
+        "//h5[contains(., '{{item_identifier}}')]/ancestor::div[1]//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{{action_verb_lowercase}}')]",
+        "//h5[contains(., '{{item_identifier}}')]/ancestor::div[contains(@class, 'card')]//button",
+        ".card:has-text('{{item_identifier}}') button:has-text('{{action_verb_capitalized}}')"
     ],
-    "wait_condition": "Button is visible and enabled"
+    "wait_condition": "Button is clickable"
+}},
+{{
+    "step_number": N+1,
+    "action": "wait",
+    "target": "server processing and UI update",
+    "value": "3000",
+    "description": "Wait for server to process the {{action_verb}} action and UI to update",
+    "wait_condition": "Request processed, UI updated, and page ready for next action"
+}},
+{{
+    "step_number": N+2,
+    "action": "click",
+    "target": "{{destination_tab_name}} tab",
+    "description": "Navigate to {{destination_tab_name}} tab to verify",
+    "selectors": [
+        "a.nav-link:has-text('{{destination_tab_name}}')",
+        "//a[contains(@class, 'nav-link')][contains(., '{{destination_tab_name}}')]",
+        "a[href*='{{destination_tab_name_lowercase}}']"
+    ],
+    "wait_condition": "Tab is clickable"
+}},
+{{
+    "step_number": N+3,
+    "action": "wait",
+    "target": "tab content loading",
+    "value": "2000",
+    "description": "Wait for {{destination_tab_name}} tab content to fully load",
+    "wait_condition": "Tab pane content loaded and rendered"
+}},
+{{
+    "step_number": N+4,
+    "action": "verify",
+    "target": "{{item_type}} '{{item_identifier}}' in {{destination_tab_name}} tab",
+    "description": "Verify {{item_type}} appears in the correct tab",
+    "selectors": [
+        "//div[contains(@class, 'tab-pane') and contains(@class, 'active')]//h5[contains(., '{{item_identifier}}')]",
+        "//h5[contains(., '{{item_identifier}}') and not(ancestor::*[contains(@style, 'display: none')])]
+    ],
+    "screenshot": true
 }}
 
-**EXAMPLE - HTML Structure:**
-```html
-<div class="card">
-    <h5>{{Task Name Here}}</h5>
-    <button class="complete-btn">{{Button Text}}</button>
-</div>
-```
+**WHERE:**
+- `{{action_verb}}` = Action from JIRA (e.g., "complete", "delete", "submit", "update")
+- `{{item_type}}` = Type from JIRA (e.g., "task", "project", "entry", "item")
+- `{{item_identifier}}` = Specific name from JIRA (e.g., "The Action Crew", "My Project", "ID-123")
+- `{{action_verb_lowercase}}` = Lowercase version (e.g., "complete", "delete")
+- `{{action_verb_capitalized}}` = Title case (e.g., "Complete", "Delete")
+- `{{destination_tab_name}}` = Tab name from JIRA (e.g., "Completed", "Archived", "Done")
+- `{{destination_tab_name_lowercase}}` = Lowercase for URL matching
 
-**CORRECT selectors (in priority order):**
-Replace `{{exact_context_text}}` with the ACTUAL task name from JIRA, and `{{button_text}}` with the ACTUAL button text:
+**FOR TAB/NAVIGATION CLICKS:**
+When clicking on tabs or navigation elements:
 
-1. `"//h5[contains(., '{{exact_context_text}}')]/ancestor::div[1]//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{{button_text_lowercase}}')]"` ← BEST
-2. `"//h5[contains(., '{{exact_context_text}}')]/ancestor::div[contains(@class, 'card')]//button"` ← Find card container
-3. `".card:has-text('{{exact_context_text}}') button:has-text('{{button_text}}')"` ← CSS approach
-4. `"//div[contains(., '{{exact_context_text}}')]//button[contains(., '{{button_text}}')]"` ← Traditional
-5. `"button:has-text('{{button_text}}')"` ← LAST RESORT (will click first matching button!)
+**GENERIC EXAMPLE - Tab navigation pattern:**
+{{
+    "step_number": N,
+    "action": "click",
+    "target": "{{tab_name}} tab",
+    "description": "Click on the {{tab_name}} tab",
+    "selectors": [
+        // PRIORITY 1: Tab role selectors
+        "a[role='tab']:has-text('{{tab_name}}')",
+        "button[role='tab']:has-text('{{tab_name}}')",
+        "//a[@role='tab'][contains(text(), '{{tab_name}}')]",
+        "//button[@role='tab'][contains(text(), '{{tab_name}}')]",
+        
+        // PRIORITY 2: Nav link patterns
+        ".nav-link:has-text('{{tab_name}}')",
+        "//a[contains(@class, 'nav-link')][contains(., '{{tab_name}}')]",
+        
+        // PRIORITY 3: Tab class patterns
+        ".tab:has-text('{{tab_name}}')",
+        "[class*='tab']:has-text('{{tab_name}}')",
+        
+        // PRIORITY 4: ID patterns
+        "#{{tab_name_lowercase}}-tab", "#tab-{{tab_name_lowercase}}",
+        
+        // PRIORITY 5: Generic text-based
+        "a:has-text('{{tab_name}}')",
+        "button:has-text('{{tab_name}}')",
+        "//a[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{{tab_name_lowercase}}')]"
+    ],
+    "wait_condition": "Tab is clickable"
+}},
+{{
+    "step_number": N+1,
+    "action": "wait",
+    "target": "tab content loading",
+    "value": "2000",
+    "description": "Wait for {{tab_name}} tab content to load",
+    "wait_condition": "Tab pane becomes active and content is rendered"
+}}
 
-**KEY XPATH CONCEPTS:**
-- `//h5[contains(., 'text')]` = Find h5 tag containing this text (any text from JIRA)
-- `/ancestor::div[1]` = Navigate UP to the first parent div element
-- `/ancestor::div[contains(@class, 'card')]` = Navigate UP to div with class 'card'
-- `//button` = Then find any button descendant within that container
-- `[contains(translate(text(), 'ABC...', 'abc...'), 'lowercase')]` = Case-insensitive button text match
+**WHERE:**
+- `{{tab_name}}` = Exact tab name from JIRA (e.g., "Completed", "Active", "Archived")
+- `{{tab_name_lowercase}}` = Lowercase version (e.g., "completed", "active")
 
-**IMPORTANT RULES:**
-1. **Check ALL header levels**: h1, h2, h3, h4, h5, h6 - use the appropriate one based on page structure
-2. **Use ancestor:: to go UP**: Navigate from the identifying element (header/text) to its parent container
-3. **Look for common classes**: 'card', 'task', 'item', 'row', 'list-item', 'col', 'container'
-4. **Case-insensitive matching**: Always use translate() in XPath for robustness across different text cases
-5. **Extract exact text from JIRA**: Use the PRECISE text from the JIRA description (preserve quotes, spacing, capitalization)
-6. **Replace placeholders**: 
-   - `{{exact_context_text}}` → actual identifier text from JIRA (e.g., task name, item title, card header)
-   - `{{context_lowercase}}` → lowercase version for case-insensitive matching
-   - `{{button_text}}` → actual button text from JIRA (e.g., "Complete", "Delete", "Edit")
-   - `{{button_text_lowercase}}` → lowercase version (e.g., "complete", "delete", "edit")
+**CRITICAL WAIT RULES (MUST FOLLOW):**
+1. **After data-changing clicks** (Complete, Delete, Submit, Update, Save, Create, Add, Remove): 
+   - ALWAYS add WAIT step with 2-3 seconds
+   - This is NON-NEGOTIABLE
 
-**COMMON PATTERNS TO RECOGNIZE:**
-- "click complete button for task 'ABC'" → context='ABC', button='complete'
-- "delete item named 'XYZ'" → context='XYZ', button='delete'
-- "edit the 'My Project' entry" → context='My Project', button='edit'
+2. **After tab clicks**: 
+   - ALWAYS add WAIT step with 1-2 seconds for tab content to load
+
+3. **Before verification**: 
+   - ALWAYS add WAIT step with 2-3 seconds for data to load
+
+4. **After login**: 
+   - ALWAYS add WAIT step with 3-5 seconds for page navigation
+
+5. **After navigation**: 
+   - Add WAIT step with 1-2 seconds for page to stabilize
+
+**PLACEHOLDER REFERENCE GUIDE:**
+
+When JIRA says: "Click complete button for task 'The Action Crew'"
+- `{{action_verb}}` = "complete"
+- `{{item_type}}` = "task"
+- `{{item_identifier}}` = "The Action Crew"
+
+When JIRA says: "Delete project named 'Test Project'"
+- `{{action_verb}}` = "delete"
+- `{{item_type}}` = "project"
+- `{{item_identifier}}` = "Test Project"
+
+When JIRA says: "Navigate to Completed tab"
+- `{{tab_name}}` = "Completed"
+
+When JIRA says: "Verify task 'ABC' is in Done section"
+- `{{item_type}}` = "task"
+- `{{item_identifier}}` = "ABC"
+- `{{destination_tab_name}}` = "Done"
 
 **TASK:**
 
@@ -326,12 +390,14 @@ Application Details:
 **YOUR TASK:**
 
 1. Convert each JIRA reproduction step into detailed automation steps
-2. **For login steps**: Break into fill email → fill password → click button → WAIT for page load
-3. **For click actions with context**: Provide 12-15 DIVERSE selectors (CSS, XPath, text, attributes, generic)
-4. **For verification steps**: Add WAIT step before verification, then provide 10-15 selector variations
-5. **For navigation steps**: Add appropriate wait times for page loads
-6. Use the ACTUAL credentials, URLs, and field names from the JIRA ticket
-7. Add screenshots at critical points (after login, before/after key actions, at verification points)
+2. **For login steps**: Break into fill email → fill password → click button → WAIT 3-5 seconds
+3. **For data-changing actions**: Add WAIT step (2-3 seconds) AFTER click - use pattern above
+4. **For tab navigation**: Add WAIT step (1-2 seconds) AFTER tab click - use pattern above
+5. **For verification steps**: Add WAIT step (2-3 seconds) BEFORE verification
+6. **For click actions with context**: Provide 12-15 DIVERSE selectors
+7. Use the ACTUAL credentials, URLs, and field names from the JIRA ticket
+8. Replace ALL placeholders ({{...}}) with ACTUAL values from JIRA description
+9. Add screenshots at critical points (after login, before/after key actions, at verification points)
 
 Return ONLY valid JSON (no markdown, no explanations):
 {{
@@ -367,14 +433,20 @@ Return ONLY valid JSON (no markdown, no explanations):
 }}
 
 **REMEMBER:**
-- Break login into 4 steps: fill email, fill password, click, WAIT
-- Add WAIT step before every verification
+- Break login into 4 steps: fill email, fill password, click, WAIT 3-5s
+- Add WAIT step (2-3s) after EVERY data-changing click (Complete, Delete, Submit, etc.)
+- Add WAIT step (1-2s) after EVERY tab click
+- Add WAIT step (2-3s) before EVERY verification
+- Replace ALL `{{placeholders}}` with ACTUAL values from the JIRA ticket
+- `{{action_verb}}` comes from JIRA action words (complete, delete, update, etc.)
+- `{{item_identifier}}` is the EXACT quoted text from JIRA (preserve quotes, spacing, capitalization)
+- `{{tab_name}}` is the EXACT tab name from JIRA
 - Provide 10-15 diverse selectors for verifications (CSS, XPath, text-based)
 - Use actual credentials from the environment_setup section
 - Be specific about what to verify based on the JIRA ticket description
-- DO NOT hardcode specific bug details - make it generic and adaptable
+- DO NOT hardcode any specific values - extract them from JIRA description dynamically
 """
-        
+
         try:
             if self.use_bedrock:
                 # AWS Bedrock Converse API (for Nova 2)
